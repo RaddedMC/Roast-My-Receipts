@@ -123,6 +123,21 @@ export async function analyzeAnswer(settings, question, answer) {
   }
 }
 
+export async function analyzeAllAnswers(settings, questions) {
+  const analyses = [];
+  for (const question of questions) {
+    const analysis = await analyzeAnswer(settings, 
+      { id: question.questionId, title: question.questionTitle }, 
+      question.userAnswer
+    );
+    analyses.push({
+      ...question,
+      llmNotesOnAnswer: analysis.llmNotesOnAnswer
+    });
+  }
+  return analyses;
+}
+
 export async function generateOnboardingQuestion(_settings, conversationHistory) {
   const nextQuestion = ONBOARDING_QUESTIONS[conversationHistory.length];
   if (!nextQuestion) {

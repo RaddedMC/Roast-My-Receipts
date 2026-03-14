@@ -1,4 +1,4 @@
-import { generateOnboardingQuestion, analyzeAnswer, generateRoast, testConnection } from "../lib/api.ts";
+import { generateOnboardingQuestion, analyzeAnswer, analyzeAllAnswers, generateRoast, testConnection } from "../lib/api.ts";
 import { STORAGE_KEYS } from "../lib/constants.ts";
 import { addPurchaseItem, addQuestionAnswer, clearAllData, completeOnboarding, getData, resetOnboarding, updateSettings, updateStats } from "../lib/storage.ts";
 
@@ -46,21 +46,32 @@ async function handleMessage(message) {
         result: await generateOnboardingQuestion(settings, data[STORAGE_KEYS.questions])
       };
     case "onboarding/answer": {
-      const notes = await analyzeAnswer(settings, message.payload.question, message.payload.answer);
+      // Store the answer without analyzing it yet
       const questions = await addQuestionAnswer({
         questionId: message.payload.question.id,
         questionTitle: message.payload.question.title,
         userAnswer: message.payload.answer,
-        llmNotesOnAnswer: notes.llmNotesOnAnswer
+        llmNotesOnAnswer: "" // Empty for now
       });
       return {
         questions
       };
     }
     case "onboarding/complete":
+      // Analyze all answers at once
+      const allData = await getData();
+      const allQuestions = allData[STORAGE_KEYS.questions];
+      const analyzedQuestions = await analyzeAllAnswers(settings, allQuestions);
+      
+      // Update all questions with their LLM notes
+      await chrome.storage.local.set({
+        [STORAGE_KEYS.questions]: analyzedQuestions
+      });
+      
       await completeOnboarding();
       return {
-        completed: true
+        completed: true,
+        questions: analyzedQuestions
       };
     case "onboarding/reset":
       await resetOnboarding();

@@ -28,7 +28,7 @@ questionForm?.addEventListener("submit", async (event) => {
     return;
   }
 
-  internalNote.textContent = "Roastii is taking notes...";
+  internalNote.textContent = "Roastii is storing your answer...";
   const response = await sendMessage("onboarding/answer", {
     question: currentQuestion,
     answer
@@ -39,8 +39,8 @@ questionForm?.addEventListener("submit", async (event) => {
     return;
   }
 
-  const latestEntry = response.questions.at(-1);
-  internalNote.textContent = latestEntry?.llmNotesOnAnswer || "Pattern stored.";
+  // Don't show LLM notes yet, just confirm the answer was stored
+  internalNote.textContent = "Answer stored. Moving to next question...";
   await loadNextQuestion();
 });
 
@@ -53,12 +53,26 @@ async function loadNextQuestion() {
 
   const result = response.result;
   if (result.done) {
-    await sendMessage("onboarding/complete");
+    const completeResponse = await sendMessage("onboarding/complete");
     questionTitle.textContent = "That's enough data for tasteful judgement.";
     questionOptions.innerHTML = "";
     customAnswerWrap.classList.add("roastii-hidden");
     followUpWrap.classList.add("roastii-hidden");
+    
+    // Show all LLM notes
+    let notesHtml = '<div class="roastii-panel">';
+    if (completeResponse.questions && completeResponse.questions.length > 0) {
+      notesHtml += '<h3>Roastii\'s Notes:</h3>';
+      completeResponse.questions.forEach((q, index) => {
+        if (q.llmNotesOnAnswer) {
+          notesHtml += `<p><strong>Q${index + 1}:</strong> ${q.llmNotesOnAnswer}</p>`;
+        }
+      });
+    }
+    notesHtml += '</div>';
+    
     questionForm.innerHTML = `
+      ${notesHtml}
       <div class="roastii-panel">
         <p class="roastii-copy">Roastii is ready. Open the extension popup on Amazon.ca and let the interventions begin.</p>
       </div>
