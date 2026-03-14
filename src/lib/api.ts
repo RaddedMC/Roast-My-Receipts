@@ -13,7 +13,7 @@ function buildHeaders(settings) {
 }
 
 async function createChatCompletion(settings, messages, schemaName) {
-  const response = await fetch(`${settings.apiEndpoint}/chat/completions`, {
+  const response = await fetch(`${settings.apiEndpoint.replace(/\/$/, "")}/chat/completions`, {
     method: "POST",
     headers: buildHeaders(settings),
     body: JSON.stringify({
@@ -137,7 +137,7 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
 }
 
 export async function testConnection(settings) {
-  const response = await fetch(`${settings.apiEndpoint}/models`, {
+  const response = await fetch(`${settings.apiEndpoint.replace(/\/$/, "")}/models`, {
     headers: buildHeaders(settings)
   });
 
