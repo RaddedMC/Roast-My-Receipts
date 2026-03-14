@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Roastii Settings</title>
+    <link rel="stylesheet" href="../components/roast-modal.css">
+  </head>
+  <body>
+    <main class="roastii-shell">
+      <section class="roastii-card">
+        <header class="roastii-header">
+          <div class="roastii-pill">Settings Lair</div>
+          <h1 class="roastii-title">Teach Roastii how to judge your cart</h1>
+          <p class="roastii-subtitle">Configure the hosted Ollama-compatible endpoint, model, and the level of intervention.</p>
+        </header>
+        <div class="roastii-section roastii-stack">
+          <form id="settings-form" class="roastii-form">
+            <div class="roastii-grid two">
+              <label class="roastii-stack">
+                <span class="roastii-label">API Endpoint</span>
+                <input class="roastii-input" id="api-endpoint" name="apiEndpoint" type="url">
+              </label>
+              <label class="roastii-stack">
+                <span class="roastii-label">Model</span>
+                <select class="roastii-select" id="model" name="model"></select>
+              </label>
+            </div>
+            <label class="roastii-stack">
+              <span class="roastii-label">API Key</span>
+              <input class="roastii-input" id="api-key" name="apiKey" type="password" placeholder="Leave blank for open endpoints">
+            </label>
+            <div class="roastii-grid two">
+              <label class="roastii-choice">
+                <input id="enabled" name="enabled" type="checkbox">
+                <span>Enable Roastii across Amazon.ca</span>
+              </label>
+              <label class="roastii-choice">
+                <input id="auto-roast" name="autoRoastOnAddToCart" type="checkbox">
+                <span>Auto-roast when "Add to Cart" is clicked</span>
+              </label>
+            </div>
+            <div class="roastii-grid two">
+              <label class="roastii-stack">
+                <span class="roastii-label">Roast Intensity</span>
+                <select class="roastii-select" id="roast-intensity" name="roastIntensity">
+                  <option value="mild">Mild</option>
+                  <option value="medium">Medium</option>
+                  <option value="savage">Savage</option>
+                </select>
+              </label>
+              <div class="roastii-panel roastii-stack">
+                <p class="roastii-label">Connection Check</p>
+                <p class="roastii-inline-note" id="connection-status">Not tested yet.</p>
+                <button class="roastii-button secondary" id="test-connection" type="button">Test Connection</button>
+              </div>
+            </div>
+            <div class="roastii-actions">
+              <button class="roastii-button primary" type="submit">Save Settings</button>
+              <button class="roastii-button ghost" id="redo-onboarding" type="button">Redo Onboarding</button>
+              <button class="roastii-button ghost" id="clear-data" type="button">Clear All Data</button>
+            </div>
+            <p class="roastii-inline-note" id="save-status"></p>
+          </form>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>
