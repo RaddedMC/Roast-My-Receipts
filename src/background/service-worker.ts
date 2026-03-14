@@ -24,6 +24,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 async function handleMessage(message) {
   const data = await getData();
   const settings = data[STORAGE_KEYS.settings];
+  const hasApiKey = Boolean(settings.apiKey?.trim());
 
   switch (message.type) {
     case "storage/get":
@@ -42,6 +43,9 @@ async function handleMessage(message) {
         })
       };
     case "onboarding/next":
+      if (!hasApiKey) {
+        throw new Error("API key required before onboarding questions can begin.");
+      }
       return {
         result: await generateOnboardingQuestion(settings, data[STORAGE_KEYS.questions])
       };
@@ -57,6 +61,9 @@ async function handleMessage(message) {
       };
     }
     case "onboarding/final-roast":
+      if (!hasApiKey) {
+        throw new Error("API key required to generate final onboarding roast.");
+      }
       return {
         result: await generateOnboardingFinalRoast(settings, data[STORAGE_KEYS.questions])
       };

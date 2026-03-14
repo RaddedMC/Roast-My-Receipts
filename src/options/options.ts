@@ -14,6 +14,16 @@ modelSelect.innerHTML = MODEL_OPTIONS.map((option) => `<option value="${option.i
 
 void hydrate();
 
+window.addEventListener("focus", () => {
+  void hydrate();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    void hydrate();
+  }
+});
+
 form?.addEventListener("submit", async (event) => {
   event.preventDefault();
   saveStatus.textContent = "Saving...";

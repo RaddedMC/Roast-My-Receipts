@@ -1,6 +1,11 @@
 import { ONBOARDING_QUESTION_LIMIT } from "../lib/constants.ts";
 import { sendMessage } from "../lib/runtime.ts";
 
+const apiKeyGate = document.querySelector("#api-key-gate");
+const onboardingApiKeyInput = document.querySelector("#onboarding-api-key");
+const validateApiKeyButton = document.querySelector("#validate-api-key");
+const openOptionsButton = document.querySelector("#open-options");
+const apiKeyStatus = document.querySelector("#api-key-status");
 const progressCount = document.querySelector("#progress-count");
 const questionTitle = document.querySelector("#question-title");
 const questionOptions = document.querySelector("#question-options");
@@ -13,12 +18,21 @@ const followUpInput = document.querySelector("#follow-up-input");
 const internalNote = document.querySelector("#internal-note");
 
 let currentQuestion = null;
+let onboardingUnlocked = false;
 
-void loadNextQuestion();
+void initializeOnboarding();
+
+validateApiKeyButton?.addEventListener("click", () => {
+  void validateAndStartOnboarding();
+});
+
+openOptionsButton?.addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});
 
 questionForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!currentQuestion) {
+  if (!onboardingUnlocked || !currentQuestion) {
     return;
   }
 
@@ -45,7 +59,114 @@ questionForm?.addEventListener("submit", async (event) => {
   await loadNextQuestion();
 });
 
+async function initializeOnboarding() {
+  if (!apiKeyStatus || !internalNote) {
+    return;
+  }
+
+  const response = await sendMessage("storage/get");
+  if (!response.ok) {
+    apiKeyStatus.textContent = `Unable to load settings: ${response.error}`;
+    internalNote.textContent = "Roastii cannot start onboarding until settings load.";
+    return;
+  }
+
+  const existingApiKey = response.data.settings.apiKey?.trim() || "";
+  if (onboardingApiKeyInput) {
+    onboardingApiKeyInput.value = existingApiKey;
+  }
+
+  if (!existingApiKey) {
+    apiKeyStatus.textContent = "Enter your API key, then validate to start onboarding.";
+    internalNote.textContent = "Roastii needs your API key before she starts profiling your spending patterns.";
+    return;
+  }
+
+  setGateBusy(true);
+  apiKeyStatus.textContent = "Saved API key found. Validating connection...";
+  const testResponse = await sendMessage("settings/test", {
+    apiKey: existingApiKey
+  });
+
+  if (!testResponse.ok) {
+    apiKeyStatus.textContent = `Saved key failed validation: ${testResponse.error}`;
+    internalNote.textContent = "Update the key and validate again to begin onboarding.";
+    setGateBusy(false);
+    return;
+  }
+
+  apiKeyStatus.textContent = "Saved key validated. Starting onboarding...";
+  await unlockOnboarding();
+  setGateBusy(false);
+}
+
+async function validateAndStartOnboarding() {
+  const apiKey = onboardingApiKeyInput?.value.trim() || "";
+  if (!apiKey) {
+    apiKeyStatus.textContent = "API key is required before onboarding can start.";
+    internalNote.textContent = "Paste your API key to unlock the onboarding flow.";
+    return;
+  }
+
+  setGateBusy(true);
+  apiKeyStatus.textContent = "Saving API key...";
+  const saveResponse = await sendMessage("settings/update", {
+    apiKey
+  });
+
+  if (!saveResponse.ok) {
+    apiKeyStatus.textContent = `Could not save API key: ${saveResponse.error}`;
+    internalNote.textContent = "Roastii could not store your key. Try again or open settings.";
+    setGateBusy(false);
+    return;
+  }
+
+  apiKeyStatus.textContent = "Testing API connection...";
+  const testResponse = await sendMessage("settings/test", {
+    apiKey
+  });
+
+  if (!testResponse.ok) {
+    apiKeyStatus.textContent = `Connection failed: ${testResponse.error}`;
+    internalNote.textContent = "Check your key and endpoint in settings, then retry.";
+    setGateBusy(false);
+    return;
+  }
+
+  apiKeyStatus.textContent = "Connection succeeded. Unlocking onboarding...";
+  await unlockOnboarding();
+  setGateBusy(false);
+}
+
+function setGateBusy(isBusy) {
+  if (validateApiKeyButton) {
+    validateApiKeyButton.disabled = isBusy;
+  }
+  if (onboardingApiKeyInput) {
+    onboardingApiKeyInput.disabled = isBusy;
+  }
+  if (openOptionsButton) {
+    openOptionsButton.disabled = isBusy;
+  }
+}
+
+async function unlockOnboarding() {
+  if (onboardingUnlocked) {
+    return;
+  }
+
+  onboardingUnlocked = true;
+  apiKeyGate?.classList.add("roastii-hidden");
+  questionForm?.classList.remove("roastii-hidden");
+  internalNote.textContent = "API key verified. Roastii can now build your profile.";
+  await loadNextQuestion();
+}
+
 async function loadNextQuestion() {
+  if (!onboardingUnlocked) {
+    return;
+  }
+
   await updateProgressLabel();
   const response = await sendMessage("onboarding/next");
   if (!response.ok) {
@@ -96,6 +217,10 @@ async function loadNextQuestion() {
 }
 
 function renderQuestion(question) {
+  if (!questionTitle || !questionOptions || !customAnswerWrap || !followUpWrap || !customAnswerInput || !followUpInput || !followUpLabel) {
+    return;
+  }
+
   questionTitle.textContent = question.title;
   const answerType = question.type === "multi" ? "checkbox" : "radio";
 
@@ -132,6 +257,10 @@ async function updateProgressLabel() {
 }
 
 function collectAnswer(question) {
+  if (!customAnswerInput || !followUpInput) {
+    return "";
+  }
+
   const checked = Array.from(document.querySelectorAll('input[name="answer"]:checked'));
   if (!checked.length) {
     return "";
