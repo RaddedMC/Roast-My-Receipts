@@ -7,7 +7,6 @@ const apiKeyInput = document.querySelector("#api-key");
 const modelSelect = document.querySelector("#model");
 const enabledInput = document.querySelector("#enabled");
 const autoRoastInput = document.querySelector("#auto-roast");
-const intensitySelect = document.querySelector("#roast-intensity");
 const saveStatus = document.querySelector("#save-status");
 const connectionStatus = document.querySelector("#connection-status");
 
@@ -63,7 +62,6 @@ async function hydrate() {
   modelSelect.value = settings.model;
   enabledInput.checked = Boolean(settings.enabled);
   autoRoastInput.checked = Boolean(settings.autoRoastOnAddToCart);
-  intensitySelect.value = settings.roastIntensity;
 }
 
 function collectSettings() {
@@ -73,6 +71,5 @@ function collectSettings() {
     model: modelSelect.value,
     enabled: enabledInput.checked,
     autoRoastOnAddToCart: autoRoastInput.checked,
-    roastIntensity: intensitySelect.value
   };
 }

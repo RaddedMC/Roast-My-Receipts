@@ -9,10 +9,10 @@ export const STORAGE_KEYS = {
 export const DEFAULT_SETTINGS = {
   apiKey: "",
   apiEndpoint: "https://api.groq.com/openai/v1",
-  model: "llama-3.1-8b-instant",
+  model: "openai/gpt-oss-20b",
   enabled: true,
   autoRoastOnAddToCart: true,
-  roastIntensity: "medium"
+  roastIntensity: "high"
 };
 
 export const DEFAULT_STATS = {
