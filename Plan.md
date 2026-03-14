@@ -12,33 +12,34 @@ Roastii is the extension’s AI character: a fun but fierce companion who is ver
 
 ## Project Structure
 
-Styles will be handled with **Tailwind CSS**.
-
 ```
 shopping-mindful-extension/
 ├── manifest.json              # Chrome extension manifest (v3)
 ├── popup/
 │   ├── popup.html             # Main extension popup
-│   └── popup.ts               # Popup logic
+|   ├── popup.css              # Popup styles
+│   └── popup.js               # Popup logic
 ├── onboarding/
 │   ├── onboarding.html        # Full-page onboarding flow
-│   └── onboarding.ts          # Onboarding logic & Roastii chat
+|   ├── options.css            # Onboarding styles
+│   └── onboarding.js          # Onboarding logic & Roastii chat
 ├── content/
-│   └── amazon.ts              # Content script for Amazon.ca
+│   └── amazon.js              # Content script for Amazon.ca
 ├── background/
-│   └── service-worker.ts      # Background service worker
+│   └── service-worker.js      # Background service worker
 ├── components/
-│   ├── roast-modal.ts         # Roast/regret score modal component
+│   ├── roast-modal.js         # Roast/regret score modal component
 ├── lib/
-│   ├── storage.ts             # Chrome storage API wrapper
-│   ├── api.ts                 # OpenAI-compatible API client
-│   └── amazon-parser.ts       # Amazon page parsing utilities
+│   ├── storage.js             # Chrome storage API wrapper
+│   ├── api.js                 # OpenAI-compatible API client
+│   └── amazon-parser.js       # Amazon page parsing utilities
 ├── assets/
 │   ├── icons/                 # Extension icons (16, 48, 128px)
 │   └── images/                # UI images/illustrations
 └── options/
     ├── options.html           # Settings page
-    └── options.ts             # API key configuration
+    ├── options.css            # Settings styles
+    └── options.js             # API key configuration
 ```
 
 ---
@@ -59,6 +60,7 @@ shopping-mindful-extension/
   ],
   "host_permissions": [
     "<https://www.amazon.ca/*>"
+    "<https://aibonks-mac-mini.cobia-chicken.ts.net/*>"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -82,7 +84,7 @@ shopping-mindful-extension/
 }
 ```
 
-### Step 1.2: Create storage wrapper (`lib/storage.ts`)
+### Step 1.2: Create storage wrapper (`lib/storage.js`)
 
 - Implement CRUD operations for Chrome storage API
 - Data schema:
@@ -94,12 +96,12 @@ shopping-mindful-extension/
   "questions": [
     {
       "questionTitle": string,
-      "userAnswer": string,
-      "llmNotesOnAnswer": string
+      "userAnswer": string
     }
   ],
+  "roastiiOnboardingThoughts": string,
 
-  // Purchase history
+  // Current Amazon item
   "items": [
     {
       "itemName": string,
@@ -114,7 +116,7 @@ shopping-mindful-extension/
   // Settings
   "settings": {
     "apiKey": string,
-    "apiEndpoint": string,        // default: OpenAI, customizable
+    "apiEndpoint": string,        // default: Our ollama server (see below), customizable
     "enabled": boolean
   }
 }
@@ -138,6 +140,7 @@ shopping-mindful-extension/
 
 - Full-page conversational interface
 - Chat-style UI where Roastii asks questions one at a time
+  - Once all of the questions have been answered, Roastii will give her thoughts on all of them at once.
 - Questions gather:
     - Shopping habits/frequency
     - Past regretful purchases
@@ -151,9 +154,9 @@ shopping-mindful-extension/
 Flow:
 1. User opens extension for first time → redirect to onboarding.html
 2. Roastii introduces herself and asks the first question
-3. User answers → Roastii processes and stores her notes
-4. Repeat for 5-7 questions (configurable)
-5. Optional: User uploads past purchase history (CSV/JSON)
+3. User answers → Roastii stores the answers
+4. Repeat for all 7 questions
+5. Once questions are completed, Roastii will give her thoughts on the user's buying habits, stored as `roastiiOnboardingThoughts`.
 6. Mark onboarding complete
 7. Redirect to main popup
 ```
@@ -169,7 +172,7 @@ Keep these questions as they are. Do not alter them. Do not add any new question
 - D) $2,500+ — I am Sam Altman and I don’t GAF!
 - E) Type your own answer here
 
-1. **"Are you currently saving up for something that Future You would thank you for?"**
+2. **"Are you currently saving up for something that Future You would thank you for?"**
 - A) Yes — something big (house, car, tuition, trip)
 - B) Sort of — I know I should be saving more but nothing specific
 - C) Does "surviving until next payday" count?
@@ -178,21 +181,21 @@ Keep these questions as they are. Do not alter them. Do not add any new question
 
 If they pick A, follow up with a short text input: *"**Nice. What's the goal?** “*
 
-1. **"If your bank sent you a monthly 'non-essential spending' report, what number would make you feel okay vs. ashamed?"**
+3. **"If your bank sent you a monthly 'non-essential spending' report, what number would make you feel okay vs. ashamed?"**
 - A) Under $50 — I want to be a monk about this
 - B) $50–$150 — reasonable treats only
 - C) $150–$300 — I work hard, I deserve things
 - D) $300+ — just roast me and let me cope
 - E) Type your own answer here
 
-1. **"What price tag makes you pause before clicking 'Buy Now'?"**
+4. **"What price tag makes you pause before clicking 'Buy Now'?"**
 - A) $15 — I agonize over everything
 - B) $30 — small stuff is fine, but I think twice past this
 - C) $75 — this is where it starts to feel real
 - D) $150+ — anything under that is basically free to me
 - E) Type your own answer here
 
-1. **"Time for some self-awareness therapy. Which of these make your wallet cry? Pick all that apply."**
+5. **"Time for some self-awareness therapy. Which of these make your wallet cry? Pick all that apply."**
 - 🔌 Tech & gadgets — "but it has a feature my current one doesn't"
 - 👗 Fashion & beauty — "it's not shopping, it's self-expression"
 - 🏠 Home & kitchen — "this $40 avocado slicer will change everything"
@@ -202,14 +205,15 @@ If they pick A, follow up with a short text input: *"**Nice. What's the goal?** 
 - 🎮 Games & entertainment — "I deserve to relax"
 - 🎁 Gifts & stuff for others — "it's not for me so it doesn't count"
 - Type your own answer(s) here
-1. **"You just impulse-bought something. It's been 10 minutes. How are we feeling?"**
+
+6. **"You just impulse-bought something. It's been 10 minutes. How are we feeling?"**
 - A) Amazing. No regrets. Born to shop.
 - B) A brief high followed by a slow creeping guilt
 - C) Already checking the return policy
 - D) I've closed the confirmation email so I don't have to look at it
 - E) Type your own answer here
 
-1. **"Think about a purchase that STILL haunts you. What went wrong?"**
+7. **"Think about a purchase that STILL haunts you. What went wrong?"**
 - A) Never used it — it's a $120 shelf decoration now
 - B) Found it cheaper literally the next day
 - C) It was garbage quality — betrayed by a 4.5-star rating
@@ -236,10 +240,7 @@ Onboarding goal:
 Learn the user’s shopping habits, triggers, weaknesses, budgets, and past regrets so you can personalize future roasts and regret scores.
 
 Conversation rules:
-- Ask exactly one question at a time.
-- Keep questions specific and easy to answer.
-- After each user answer, write a short private note for internal storage (1–2 sentences) about what the answer reveals (e.g., triggers, categories, rationalizations). Mark it clearly as internal.
-- Then ask the next question.
+- After all questions have been answered, write a profile on the user's shopping habits.
 ```
 
 ---
@@ -304,9 +305,6 @@ Inputs (provided to you):
 User Profile:
 {userQuestionsAndAnswers}
 
-Purchase History:
-{recentPurchases}
-
 Current Item:
 - Name: {itemName}
 - Price: ${itemPrice}
@@ -351,7 +349,6 @@ Style notes:
 - Recent roasts list (last 5)
 - Manual trigger button: "Roast Current Product"
 - Settings link
-- "View All History" link
 
 ### Step 4.2: Manual Trigger Flow
 
@@ -377,8 +374,6 @@ Style notes:
     - Enable/disable auto-roast on Add to Cart
     - Roast intensity (mild/medium/savage)
 - Data Management:
-    - Export data (JSON)
-    - Import purchase history
     - Clear all data
     - Re-do onboarding
 
@@ -391,33 +386,6 @@ Style notes:
 - Handle extension installation → open onboarding
 - Message passing between popup, content script, and storage
 - Badge updates (e.g., show count of items roasted today)
-
----
-
-## Data Flow Diagram
-
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│  Amazon.ca      │     │  Content Script  │     │  Service Worker │
-│  Product Page   │────▶│  (amazon.ts)     │────▶│  (background)   │
-└─────────────────┘     └──────────────────┘     └─────────────────┘
-                                │                         │
-                                │                         │
-                                ▼                         ▼
-                        ┌──────────────────┐     ┌─────────────────┐
-                        │  Roast Modal     │     │  Chrome Storage │
-                        │  (UI Component)  │     │  (Persistence)  │
-                        └──────────────────┘     └─────────────────┘
-                                │                         ▲
-                                │                         │
-                                ▼                         │
-                        ┌──────────────────┐              │
-                        │  OpenAI API      │──────────────┘
-                        │  (lib/api.ts)    │
-                        └──────────────────┘
-```
-
----
 
 ## Implementation Order
 
@@ -439,54 +407,38 @@ Style notes:
     - Add to Cart interception
     - Roast modal UI
     - Roastii roast generation
-5. **Popup & Polish** (Phase 4)
-    - Main popup UI
-    - Manual trigger
-    - Stats and history
-6. **Background & Refinement** (Phase 6)
-    - Service worker setup
-    - Badge updates
-    - Error handling
-    - Edge cases
 
 ---
 
-## Key Files to Create (in order)
+## Key Files to Create
 
 1. `manifest.json`
-2. `lib/storage.ts`
-3. `lib/api.ts`
-4. `options/options.html`, `options.css`, `options.ts`
-5. `onboarding/onboarding.html`, `onboarding.css`, `onboarding.ts`
-6. `lib/amazon-parser.ts`
-7. `content/amazon.ts`
-8. `components/roast-modal.css`, `roast-modal.ts`
-9. `popup/popup.html`, `popup.css`, `popup.ts`
-10. `background/service-worker.ts`
+2. `lib/storage.js`
+3. `lib/api.js`
+4. `options/options.html`, `options.css`, `options.js`
+5. `onboarding/onboarding.html`, `onboarding.css`, `onboarding.js`
+6. `lib/amazon-parser.js`
+7. `content/amazon.js`
+8. `components/roast-modal.css`, `roast-modal.js`
+9. `popup/popup.html`, `popup.css`, `popup.js`
+10. `background/service-worker.js`
 
 ---
 
 ## Technical Considerations
 
 ### API Security
-
 - API key stored in chrome.storage.local (not sync - security)
 - Never expose API key in content scripts
 - All API calls go through service worker
 
 ### [Amazon.ca](http://amazon.ca/) Specifics
-
 - URL pattern: `https://www.amazon.ca/*/dp/ASIN`
 - Handle variations: product pages, search results
 - Graceful degradation if page structure changes
 - See a sample in the `sample-amazon-page` folder!
 
-### Error Handling
-
-- API failures: Show cached/fallback roast
-
 ### Performance
-
-- Lazy load roast modal styles
-    - Use the API’s “Streaming” feature so that the text responses to all LLM queries are streamed back as they are generated.
-- Debounce rapid Add to Cart clicks
+- Use the API’s “Streaming” feature so that the text responses to all LLM queries are streamed back as they are generated.
+- Show a loading icon after a request is made so that the user knows that the LLM is working.
+- DISABLE THINKING IN THE LLM TO MAKE ITS RESPONSES DRAMATICALLY FASTER
