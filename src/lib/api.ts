@@ -1,41 +1,92 @@
+import { OpenAI } from "openai";
 import { ONBOARDING_QUESTIONS, ONBOARDING_SYSTEM_PROMPT, ROAST_SYSTEM_PROMPT } from "./constants.ts";
 
-function buildHeaders(settings) {
-  const headers = {
-    "Content-Type": "application/json"
-  };
-
-  if (settings.apiKey) {
-    headers.Authorization = `Bearer ${settings.apiKey}`;
-  }
-
-  return headers;
+function createClient(settings) {
+  return new OpenAI({
+    apiKey: settings.apiKey || "not-needed",
+    baseURL: settings.apiEndpoint?.trim() || undefined,
+    dangerouslyAllowBrowser: true
+  });
 }
 
-async function createChatCompletion(settings, messages, schemaName) {
-  const response = await fetch(`${settings.apiEndpoint.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: buildHeaders(settings),
-    body: JSON.stringify({
-      model: settings.model,
-      stream: false,
-      response_format: { type: "json_object" },
-      messages
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+function normalizeContent(content) {
+  if (typeof content === "string") {
+    return content;
   }
 
-  const payload = await response.json();
-  const content = payload?.choices?.[0]?.message?.content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") {
+          return part;
+        }
 
-  if (!content) {
+        if (part?.type === "input_text" || part?.type === "output_text" || part?.type === "text") {
+          return part.text || "";
+        }
+
+        return "";
+      })
+      .join("");
+  }
+
+  return "";
+}
+
+function extractJson(rawText) {
+  const trimmed = rawText.trim();
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fencedMatch?.[1]) {
+    return fencedMatch[1].trim();
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+
+  return trimmed;
+}
+
+async function createStructuredResponse(settings, messages, schemaName, options = {}) {
+  const client = createClient(settings);
+  const input = messages.map((message) => ({
+    role: message.role,
+    content: normalizeContent(message.content)
+  }));
+
+  const stream = await client.responses.create({
+    model: settings.model,
+    input,
+    stream: true,
+    reasoning: {enabled: false },
+    text: {
+      format: {
+        type: "json_object"
+      }
+    }
+  });
+
+  let rawText = "";
+  for await (const event of stream) {
+    if (event.type !== "response.output_text.delta") {
+      continue;
+    }
+
+    rawText += event.delta;
+    options.onChunk?.(event.delta);
+  }
+
+  const jsonText = extractJson(rawText);
+  if (!jsonText) {
     throw new Error(`No content returned for ${schemaName}`);
   }
 
-  return JSON.parse(content);
+  return {
+    rawText,
+    parsed: JSON.parse(jsonText)
+  };
 }
 
 function buildFallbackNote(answer) {
@@ -48,7 +99,7 @@ function buildFallbackNote(answer) {
 
 export async function analyzeAnswer(settings, question, answer) {
   try {
-    return await createChatCompletion(
+    const response = await createStructuredResponse(
       settings,
       [
         { role: "system", content: `${ONBOARDING_SYSTEM_PROMPT}\nReturn JSON only with a single key named llmNotesOnAnswer.` },
@@ -62,6 +113,8 @@ export async function analyzeAnswer(settings, question, answer) {
       ],
       "analyzeAnswer"
     );
+
+    return response.parsed;
   } catch (_error) {
     console.log(_error);
     return {
@@ -109,9 +162,9 @@ function fallbackRoast(itemName, itemPrice, questions, items) {
   };
 }
 
-export async function generateRoast(settings, item, userProfile, purchaseHistory) {
+export async function generateRoast(settings, item, userProfile, purchaseHistory, options = {}) {
   try {
-    return await createChatCompletion(
+    const response = await createStructuredResponse(
       settings,
       [
         { role: "system", content: `${ROAST_SYSTEM_PROMPT}\nReturn JSON only with keys regretScore, roast, reasoning.` },
@@ -128,8 +181,11 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
           })
         }
       ],
-      "generateRoast"
+      "generateRoast",
+      options
     );
+
+    return response.parsed;
   } catch (_error) {
     console.log(_error);
     return fallbackRoast(item.itemName, item.itemPrice, userProfile, purchaseHistory);
@@ -137,13 +193,12 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
 }
 
 export async function testConnection(settings) {
-  const response = await fetch(`${settings.apiEndpoint.replace(/\/$/, "")}/models`, {
-    headers: buildHeaders(settings)
-  });
-
-  if (!response.ok) {
-    throw new Error(`Connection test failed with status ${response.status}`);
-  }
-
-  return response.json();
+  const client = createClient(settings);
+  const response = await client.models.list();
+  return {
+    data: response.data?.map((model) => ({
+      id: model.id,
+      created: model.created
+    })) || []
+  };
 }

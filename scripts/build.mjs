@@ -4,6 +4,7 @@ import { dirname, extname, join, relative, resolve } from "node:path";
 const rootDir = resolve(process.cwd());
 const srcDir = join(rootDir, "src");
 const distDir = join(rootDir, "dist");
+const vendoredOpenAIPath = join(distDir, "vendor", "openai", "index.mjs");
 
 if (process.argv.includes("--clean") && existsSync(distDir)) {
   rmSync(distDir, { recursive: true, force: true });
@@ -12,6 +13,7 @@ if (process.argv.includes("--clean") && existsSync(distDir)) {
 mkdirSync(distDir, { recursive: true });
 
 walk(srcDir);
+copyIfExists("node_modules/openai", "vendor/openai");
 copyIfExists("README.md");
 
 function walk(directory) {
@@ -37,6 +39,7 @@ function walk(directory) {
       let contents = readFileSync(sourcePath, "utf8");
       contents = contents.replace(/from\s+["'](\.{1,2}\/[^"']+)\.ts["']/g, 'from "$1.js"');
       contents = contents.replace(/import\s+["'](\.{1,2}\/[^"']+)\.ts["']/g, 'import "$1.js"');
+      contents = rewriteOpenAIImports(contents, outputPath);
       writeFileSync(outputPath, contents);
       continue;
     }
@@ -45,12 +48,21 @@ function walk(directory) {
   }
 }
 
-function copyIfExists(pathName) {
-  const input = join(rootDir, pathName);
+function copyIfExists(inputPathName, outputPathName = inputPathName) {
+  const input = join(rootDir, inputPathName);
   if (!existsSync(input)) {
     return;
   }
-  const output = join(distDir, pathName);
+  const output = join(distDir, outputPathName);
   mkdirSync(dirname(output), { recursive: true });
   cpSync(input, output, { recursive: true });
+}
+
+function rewriteOpenAIImports(contents, outputPath) {
+  const openAIImportPath = relative(dirname(outputPath), vendoredOpenAIPath).replace(/\\/g, "/");
+  const normalizedImportPath = openAIImportPath.startsWith(".")
+    ? openAIImportPath
+    : `./${openAIImportPath}`;
+
+  return contents.replace(/from\s+["']openai["']/g, `from "${normalizedImportPath}"`);
 }
