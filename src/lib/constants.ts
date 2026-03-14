@@ -8,7 +8,7 @@ export const STORAGE_KEYS = {
 
 export const DEFAULT_SETTINGS = {
   apiKey: "",
-  apiEndpoint: "https://aibonks-mac-mini.cobia-chicken.ts.net/v1",
+  apiEndpoint: "https://aibonks-mac-mini.cobia-chicken.ts.net",
   model: "qwen3.5:9b",
   enabled: true,
   autoRoastOnAddToCart: true,

@@ -1,41 +1,139 @@
 import { ONBOARDING_QUESTIONS, ONBOARDING_SYSTEM_PROMPT, ROAST_SYSTEM_PROMPT } from "./constants.ts";
 
-function buildHeaders(settings) {
+function normalizeEndpoint(apiEndpoint = "") {
+  return apiEndpoint.trim().replace(/\/+$/, "");
+}
+
+function buildHeaders(settings, authMode = "bearer") {
   const headers = {
     "Content-Type": "application/json"
   };
 
   if (settings.apiKey) {
-    headers.Authorization = `Bearer ${settings.apiKey}`;
+    if (authMode === "x-api-key") {
+      headers["x-api-key"] = settings.apiKey;
+    } else {
+      headers.Authorization = `Bearer ${settings.apiKey}`;
+    }
   }
 
   return headers;
 }
 
+async function readResponseErrorMessage(response) {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const payload = await response.json().catch(() => null);
+    if (!payload) {
+      return "";
+    }
+
+    return payload.error?.message || payload.message || JSON.stringify(payload);
+  }
+
+  return (await response.text().catch(() => "")).trim();
+}
+
+async function fetchWithAuthFallback(settings, url, init = {}) {
+  const baseInit = {
+    ...init,
+    headers: {
+      ...buildHeaders(settings, "bearer"),
+      ...(init.headers || {})
+    }
+  };
+
+  let response = await fetch(url, baseInit);
+
+  if (response.status === 403 && settings.apiKey) {
+    const retryInit = {
+      ...init,
+      headers: {
+        ...buildHeaders(settings, "x-api-key"),
+        ...(init.headers || {})
+      }
+    };
+    response = await fetch(url, retryInit);
+  }
+
+  return response;
+}
+
+function parseJsonFromText(text) {
+  if (!text || typeof text !== "string") {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (_error) {
+    const startIndex = text.indexOf("{");
+    const endIndex = text.lastIndexOf("}");
+    if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+      return null;
+    }
+
+    const candidate = text.slice(startIndex, endIndex + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch (_nestedError) {
+      return null;
+    }
+  }
+}
+
 async function createChatCompletion(settings, messages, schemaName) {
-  const response = await fetch(`${settings.apiEndpoint}/chat/completions`, {
-    method: "POST",
-    headers: buildHeaders(settings),
-    body: JSON.stringify({
+  const endpoint = normalizeEndpoint(settings.apiEndpoint);
+  const requestBodies = [
+    {
       model: settings.model,
       stream: false,
       response_format: { type: "json_object" },
       messages
-    })
-  });
+    },
+    {
+      model: settings.model,
+      stream: false,
+      messages
+    }
+  ];
 
-  if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}`);
+  let lastError = "";
+
+  for (const requestBody of requestBodies) {
+    const response = await fetchWithAuthFallback(settings, `${endpoint}/api/generate`, {
+      method: "POST",
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorDetails = await readResponseErrorMessage(response);
+      lastError = `status ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`;
+      continue;
+    }
+
+    const payload = await response.json().catch(() => null);
+    const content = payload?.choices?.[0]?.message?.content;
+
+    if (!content) {
+      lastError = `No content returned for ${schemaName}`;
+      continue;
+    }
+
+    if (typeof content === "object" && content !== null) {
+      return content;
+    }
+
+    const parsed = parseJsonFromText(content);
+    if (parsed) {
+      return parsed;
+    }
+
+    lastError = `Could not parse JSON content for ${schemaName}`;
   }
 
-  const payload = await response.json();
-  const content = payload?.choices?.[0]?.message?.content;
-
-  if (!content) {
-    throw new Error(`No content returned for ${schemaName}`);
-  }
-
-  return JSON.parse(content);
+  throw new Error(`API request failed${lastError ? ` (${lastError})` : ""}`);
 }
 
 function buildFallbackNote(answer) {
@@ -137,13 +235,22 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
 }
 
 export async function testConnection(settings) {
-  const response = await fetch(`${settings.apiEndpoint}/models`, {
-    headers: buildHeaders(settings)
-  });
+  const endpoint = normalizeEndpoint(settings.apiEndpoint);
+  const response = await fetchWithAuthFallback(settings, `${endpoint}/models`);
 
   if (!response.ok) {
-    throw new Error(`Connection test failed with status ${response.status}`);
+    const errorDetails = await readResponseErrorMessage(response);
+    throw new Error(`Connection test failed with status ${response.status}${errorDetails ? `: ${errorDetails}` : ""}`);
   }
+
+  await createChatCompletion(
+    settings,
+    [
+      { role: "system", content: "Return JSON only with a single key named ok set to true." },
+      { role: "user", content: "Ping" }
+    ],
+    "testConnection"
+  );
 
   return response.json();
 }
