@@ -63,6 +63,7 @@ export async function analyzeAnswer(settings, question, answer) {
       "analyzeAnswer"
     );
   } catch (_error) {
+    console.log(_error);
     return {
       llmNotesOnAnswer: buildFallbackNote(answer)
     };
@@ -130,6 +131,7 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
       "generateRoast"
     );
   } catch (_error) {
+    console.log(_error);
     return fallbackRoast(item.itemName, item.itemPrice, userProfile, purchaseHistory);
   }
 }
