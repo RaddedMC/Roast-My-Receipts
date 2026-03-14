@@ -21,7 +21,7 @@ export const DEFAULT_STATS = {
   roastedToday: 0
 };
 
-export const ONBOARDING_QUESTION_LIMIT = 7;
+export const ONBOARDING_QUESTION_LIMIT = 8;
 
 export const ONBOARDING_QUESTIONS = [
   {
@@ -113,6 +113,14 @@ export const ONBOARDING_QUESTIONS = [
       "Found it cheaper literally the next day",
       "It was garbage quality — betrayed by a 4.5-star rating",
       "Nothing was wrong with it. I just didn't need it and I knew that when I bought it.",
+      "Type your own answer here"
+    ]
+  },
+  {
+    id: "self_description",
+    title: "Last one. Describe yourself in 1-2 sentences so Roastii knows who she's dealing with. Be honest — she will find out.",
+    type: "single",
+    options: [
       "Type your own answer here"
     ]
   }
