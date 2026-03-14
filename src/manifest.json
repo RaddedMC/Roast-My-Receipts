@@ -9,8 +9,7 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://www.amazon.ca/*",
-    "https://aibonks-mac-mini.cobia-chicken.ts.net/*"
+    "https://www.amazon.ca/*"
   ],
   "action": {
     "default_popup": "popup/popup.html"
