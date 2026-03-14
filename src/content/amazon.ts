@@ -1,5 +1,12 @@
 let interceptInProgress = false;
 
+function sendMessage(type, payload = {}) {
+  return chrome.runtime.sendMessage({
+    type,
+    payload
+  });
+}
+
 function textFromSelector(root, selector) {
   return root.querySelector(selector)?.textContent?.trim() || "";
 }
@@ -47,6 +54,15 @@ function parseAmazonProduct(documentRoot = document) {
   };
 }
 
+function meterMarkup(score) {
+  const offset = `${100 - Math.min(100, Math.max(0, score * 10))}%`;
+  return `
+    <div class="roastii-meter" aria-hidden="true">
+      <div class="roastii-meter-fill" style="left: ${100 - score * 10}%; width: ${offset};"></div>
+    </div>
+  `;
+}
+
 function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose }) {
   const root = document.createElement("div");
   root.className = "roastii-modal-root";
@@ -66,7 +82,7 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
             <p class="roastii-label">Regret Score</p>
             <strong>${roastData.regretScore}/10</strong>
           </div>
-          <div class="roastii-meter" aria-hidden="true"></div>
+          ${meterMarkup(roastData.regretScore)}
         </div>
         <div class="roastii-panel">
           <p class="roastii-label">Roast</p>
@@ -80,13 +96,6 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
       </div>
     </div>
   `;
-
-  const meter = root.querySelector(".roastii-meter");
-  const marker = document.createElement("div");
-  marker.className = "roastii-meter-fill";
-  marker.style.left = `${Math.min(100, roastData.regretScore * 10)}%`;
-  marker.style.width = `${Math.max(0, 100 - roastData.regretScore * 10)}%`;
-  meter?.append(marker);
 
   root.addEventListener("click", (event) => {
     if (event.target === root) {
@@ -111,6 +120,115 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
   });
 
   document.body.append(root);
+  return root;
+}
+
+function bypassAddToCart(button) {
+  interceptInProgress = false;
+  button.dataset.roastiiBypass = "true";
+  button.click();
+  button.dataset.roastiiBypass = "false";
+}
+
+function getAddToCartButton() {
+  const button = document.querySelector("#add-to-cart-button");
+  return button instanceof HTMLButtonElement ? button : null;
+}
+
+function buildPurchaseRecord(product, roastData) {
+  return {
+    ...product,
+    regretScore: roastData.regretScore,
+    roast: roastData.roast,
+    dateAdded: new Date().toISOString()
+  };
+}
+
+async function loadSettings() {
+  const response = await sendMessage("storage/get");
+  return response.ok ? response.data.settings : null;
+}
+
+async function requestRoast(product) {
+  const response = await sendMessage("roast/generate", {
+    product
+  });
+  return response.ok ? response.roastData : null;
+}
+
+async function recordPurchase(product, roastData) {
+  await sendMessage("purchase/record", {
+    item: buildPurchaseRecord(product, roastData)
+  });
+}
+
+async function recordSavedWallet(amount) {
+  await sendMessage("wallet/save", {
+    amount
+  });
+}
+
+function openRoastModal(product, roastData, handlers = {}) {
+  return showRoastModal({
+    product,
+    roastData,
+    onAddAnyway: handlers.onAddAnyway,
+    onSaveWallet: handlers.onSaveWallet,
+    onClose: handlers.onClose
+  });
+}
+
+async function handleIntercept(event, button) {
+  if (button.dataset.roastiiBypass === "true" || interceptInProgress) {
+    return;
+  }
+
+  interceptInProgress = true;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+
+  try {
+    const product = parseAmazonProduct(document);
+    if (!product.itemName || !product.itemPrice) {
+      bypassAddToCart(button);
+      return;
+    }
+
+    const settings = await loadSettings();
+    if (!settings?.enabled || !settings.autoRoastOnAddToCart) {
+      bypassAddToCart(button);
+      return;
+    }
+
+    const roastData = await requestRoast(product);
+    if (!roastData) {
+      bypassAddToCart(button);
+      return;
+    }
+
+    openRoastModal(product, roastData, {
+      onAddAnyway: async () => {
+        try {
+          await recordPurchase(product, roastData);
+        } finally {
+          bypassAddToCart(button);
+        }
+      },
+      onSaveWallet: async () => {
+        try {
+          await recordSavedWallet(product.itemPrice);
+        } finally {
+          interceptInProgress = false;
+        }
+      },
+      onClose: () => {
+        interceptInProgress = false;
+      }
+    });
+  } catch (_error) {
+    bypassAddToCart(button);
+  }
 }
 
 function attachInterception() {
@@ -118,90 +236,15 @@ function attachInterception() {
     return;
   }
 
-  const button = document.querySelector("#add-to-cart-button");
+  const button = getAddToCartButton();
   if (!button || button.dataset.roastiiBound === "true") {
     return;
   }
 
   button.dataset.roastiiBound = "true";
-  button.addEventListener(
-    "click",
-    async (event) => {
-      if (button.dataset.roastiiBypass === "true") {
-        return;
-      }
-
-      if (interceptInProgress) {
-        return;
-      }
-
-      interceptInProgress = true;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
-      const product = parseAmazonProduct(document);
-      if (!product.itemName || !product.itemPrice) {
-        interceptInProgress = false;
-        button.dataset.roastiiBypass = "true";
-        button.click();
-        button.dataset.roastiiBypass = "false";
-        return;
-      }
-
-      const storageResponse = await chrome.runtime.sendMessage({ type: "storage/get" });
-      if (!storageResponse.ok || !storageResponse.data.settings.enabled || !storageResponse.data.settings.autoRoastOnAddToCart) {
-        interceptInProgress = false;
-        button.dataset.roastiiBypass = "true";
-        button.click();
-        button.dataset.roastiiBypass = "false";
-        return;
-      }
-
-      const roastResponse = await chrome.runtime.sendMessage({
-        type: "roast/generate",
-        payload: { product }
-      });
-
-      if (!roastResponse.ok) {
-        interceptInProgress = false;
-        return;
-      }
-
-      showRoastModal({
-        roastData: roastResponse.roastData,
-        product,
-        onAddAnyway: async () => {
-          await chrome.runtime.sendMessage({
-            type: "purchase/record",
-            payload: {
-              item: {
-                ...product,
-                regretScore: roastResponse.roastData.regretScore,
-                roast: roastResponse.roastData.roast,
-                dateAdded: new Date().toISOString()
-              }
-            }
-          });
-          interceptInProgress = false;
-          button.dataset.roastiiBypass = "true";
-          button.click();
-          button.dataset.roastiiBypass = "false";
-        },
-        onSaveWallet: async () => {
-          await chrome.runtime.sendMessage({
-            type: "wallet/save",
-            payload: { amount: product.itemPrice }
-          });
-          interceptInProgress = false;
-        },
-        onClose: () => {
-          interceptInProgress = false;
-        }
-      });
-    },
-    true
-  );
+  button.addEventListener("click", (event) => {
+    void handleIntercept(event, button);
+  }, true);
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -220,31 +263,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse({ ok: false });
       return true;
     }
- 
-      showRoastModal({
-        roastData,
-        product,
-        onAddAnyway: async () => {
-          await chrome.runtime.sendMessage({
-            type: "purchase/record",
-            payload: {
-              item: {
-                ...product,
-                regretScore: roastData.regretScore,
-                roast: roastData.roast,
-                dateAdded: new Date().toISOString()
-              }
-            }
-          });
-        },
-        onSaveWallet: async () => {
-          await chrome.runtime.sendMessage({
-            type: "wallet/save",
-            payload: { amount: product.itemPrice }
-          });
-        }
-      });
-      sendResponse({ ok: true, roastData });
+
+    openRoastModal(product, roastData, {
+      onAddAnyway: async () => {
+        await recordPurchase(product, roastData);
+      },
+      onSaveWallet: async () => {
+        await recordSavedWallet(product.itemPrice);
+      }
+    });
+
+    sendResponse({ ok: true, roastData });
     return true;
   }
 

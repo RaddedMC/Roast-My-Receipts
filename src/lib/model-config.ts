@@ -1,17 +1,17 @@
 export const MODEL_OPTIONS = [
   {
-    id: "qwen3.5:9b",
-    label: "qwen3.5:9b",
-    description: "Balanced default running on the hosted Ollama-compatible endpoint."
+    id: "llama-3.1-8b-instant",
+    label: "llama-3.1-8b-instant",
+    description: "Fast Groq default for quick Roastii responses."
   },
   {
-    id: "ministral-3:3b",
-    label: "ministral-3:3b",
-    description: "Faster and cheaper, but less accurate. Good for quick responses and testing."
+    id: "llama-3.3-70b-versatile",
+    label: "llama-3.3-70b-versatile",
+    description: "Stronger reasoning and writing quality, with a bit more latency."
   },
   {
-    id: "gemma3:4b",
-    label: "gemma3:4b",
-    description: "Google's lastest open source model."
-  },
+    id: "openai/gpt-oss-20b",
+    label: "openai/gpt-oss-20b",
+    description: "Open-weight option available through Groq's OpenAI-compatible API."
+  }
 ];

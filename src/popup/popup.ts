@@ -1,4 +1,3 @@
-import { generateRoast } from "../lib/api.ts";
 import { queryActiveTab, sendMessage } from "../lib/runtime.ts";
 
 const savedCount = document.querySelector("#saved-count");
@@ -11,19 +10,39 @@ const roastCurrentButton = document.querySelector("#roast-current");
 const streamState = document.querySelector("#stream-state");
 const streamPreview = document.querySelector("#stream-preview");
 
+let activeStreamRequestId = "";
+let activeStreamBuffer = "";
+
 void hydrate();
 
 document.querySelector("#open-settings")?.addEventListener("click", () => {
   chrome.runtime.openOptionsPage();
 });
 
+chrome.runtime.onMessage.addListener((message) => {
+  if (message.type !== "roast/stream" || message.requestId !== activeStreamRequestId) {
+    return false;
+  }
+
+  activeStreamBuffer += message.chunk || "";
+  const preview = extractRoastPreview(activeStreamBuffer);
+  setStreamingState({
+    status: "Streaming roast...",
+    stateLabel: preview ? "Streaming live..." : "Roastii is thinking...",
+    preview: preview || activeStreamBuffer.trim() || "Waiting for the first tokens..."
+  });
+  return false;
+});
+
 roastCurrentButton?.addEventListener("click", async () => {
+  setRoastButtonDisabled(true);
+  activeStreamRequestId = crypto.randomUUID();
+  activeStreamBuffer = "";
   setStreamingState({
     status: "Looking at the current tab...",
     stateLabel: "Checking the page...",
     preview: "Roastii is looking for the product details first."
   });
-  setRoastButtonDisabled(true);
 
   try {
     const [tab] = await queryActiveTab();
@@ -39,8 +58,9 @@ roastCurrentButton?.addEventListener("click", async () => {
     const pageResponse = await chrome.tabs.sendMessage(tab.id, {
       type: "page/get-product"
     });
+    const product = pageResponse?.product;
 
-    if (!pageResponse?.ok || !pageResponse.product?.itemName) {
+    if (!pageResponse?.ok || !product?.itemName) {
       setStreamingState({
         status: "Roastii couldn't find product details on this page.",
         stateLabel: "Product not found",
@@ -49,45 +69,33 @@ roastCurrentButton?.addEventListener("click", async () => {
       return;
     }
 
-    const storageResponse = await sendMessage("storage/get");
-    if (!storageResponse.ok) {
-      throw new Error(storageResponse.error || "Unable to load settings.");
-    }
-
-    const { settings, questions, items } = storageResponse.data;
-    let streamBuffer = "";
-
     setStreamingState({
       status: "Streaming roast...",
       stateLabel: "Roastii is thinking...",
       preview: "Waiting for the first tokens..."
     });
 
-    const roastData = await generateRoast(settings, pageResponse.product, questions, items, {
-      onChunk(chunk) {
-        streamBuffer += chunk;
-        const preview = extractRoastPreview(streamBuffer);
-        if (streamState) {
-          streamState.textContent = preview ? "Streaming live..." : "Roastii is thinking...";
-        }
-
-        if (streamPreview) {
-          streamPreview.textContent = preview || streamBuffer.trim() || "Waiting for the first tokens...";
-        }
-      }
+    const roastResponse = await sendMessage("roast/generate", {
+      product,
+      requestId: activeStreamRequestId
     });
+
+    if (!roastResponse.ok || !roastResponse.roastData) {
+      throw new Error(roastResponse.error || "Unable to generate roast.");
+    }
 
     await chrome.tabs.sendMessage(tab.id, {
       type: "page/show-roast",
-      product: pageResponse.product,
-      roastData
+      product,
+      roastData: roastResponse.roastData
     });
 
     setStreamingState({
-      status: `Roast ready: ${roastData.regretScore}/10 regret potential.`,
+      status: `Roast ready: ${roastResponse.roastData.regretScore}/10 regret potential.`,
       stateLabel: "Final roast ready",
-      preview: roastData.roast || "Roast complete."
+      preview: roastResponse.roastData.roast || "Roast complete."
     });
+    await hydrate();
   } catch (error) {
     setStreamingState({
       status: `Roast failed: ${error.message || "Unknown error"}`,
@@ -95,6 +103,8 @@ roastCurrentButton?.addEventListener("click", async () => {
       preview: "Roastii hit a snag talking to the model. Check the endpoint, model, and key in Settings."
     });
   } finally {
+    activeStreamRequestId = "";
+    activeStreamBuffer = "";
     setRoastButtonDisabled(false);
   }
 });
@@ -126,11 +136,11 @@ async function hydrate() {
       `).join("")
     : `<p class="roastii-inline-note">No roasts yet. Go tempt fate on Amazon.ca.</p>`;
 
-  if (streamState) {
+  if (streamState && !activeStreamRequestId) {
     streamState.textContent = "Standing by";
   }
 
-  if (streamPreview) {
+  if (streamPreview && !activeStreamRequestId) {
     streamPreview.textContent = "Start a roast to watch Roastii stream the takedown live.";
   }
 }

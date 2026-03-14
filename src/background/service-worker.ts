@@ -1,4 +1,4 @@
-import { generateOnboardingQuestion, analyzeAnswer, generateRoast, testConnection } from "../lib/api.ts";
+import { generateOnboardingFinalRoast, generateOnboardingQuestion, generateRoast, testConnection } from "../lib/api.ts";
 import { STORAGE_KEYS } from "../lib/constants.ts";
 import { addPurchaseItem, addQuestionAnswer, clearAllData, completeOnboarding, getData, resetOnboarding, updateSettings, updateStats } from "../lib/storage.ts";
 
@@ -46,17 +46,20 @@ async function handleMessage(message) {
         result: await generateOnboardingQuestion(settings, data[STORAGE_KEYS.questions])
       };
     case "onboarding/answer": {
-      const notes = await analyzeAnswer(settings, message.payload.question, message.payload.answer);
       const questions = await addQuestionAnswer({
         questionId: message.payload.question.id,
         questionTitle: message.payload.question.title,
         userAnswer: message.payload.answer,
-        llmNotesOnAnswer: notes.llmNotesOnAnswer
+        llmNotesOnAnswer: ""
       });
       return {
         questions
       };
     }
+    case "onboarding/final-roast":
+      return {
+        result: await generateOnboardingFinalRoast(settings, data[STORAGE_KEYS.questions])
+      };
     case "onboarding/complete":
       await completeOnboarding();
       return {
@@ -72,7 +75,12 @@ async function handleMessage(message) {
         settings,
         message.payload.product,
         data[STORAGE_KEYS.questions],
-        data[STORAGE_KEYS.items]
+        data[STORAGE_KEYS.items],
+        {
+          onChunk(chunk) {
+            void emitStreamChunk(message.payload.requestId, chunk);
+          }
+        }
       );
       return {
         roastData
@@ -107,5 +115,21 @@ async function handleMessage(message) {
       };
     default:
       return {};
+  }
+}
+
+async function emitStreamChunk(requestId, chunk) {
+  if (!requestId || !chunk) {
+    return;
+  }
+
+  try {
+    await chrome.runtime.sendMessage({
+      type: "roast/stream",
+      requestId,
+      chunk
+    });
+  } catch (_error) {
+    // Ignore missing listeners so popup closure does not fail roast generation.
   }
 }

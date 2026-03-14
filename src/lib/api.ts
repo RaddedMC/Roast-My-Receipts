@@ -1,9 +1,9 @@
-import { OpenAI } from "openai";
-import { ONBOARDING_QUESTIONS, ONBOARDING_SYSTEM_PROMPT, ROAST_SYSTEM_PROMPT } from "./constants.ts";
+import OpenAI from "openai";
+import { ONBOARDING_FINAL_ROAST_PROMPT, ONBOARDING_QUESTIONS, ONBOARDING_SYSTEM_PROMPT, ROAST_SYSTEM_PROMPT } from "./constants.ts";
 
 function createClient(settings) {
   return new OpenAI({
-    apiKey: settings.apiKey || "not-needed",
+    apiKey: "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" || "not-needed",
     baseURL: settings.apiEndpoint?.trim() || undefined,
     dangerouslyAllowBrowser: true
   });
@@ -60,7 +60,6 @@ async function createStructuredResponse(settings, messages, schemaName, options 
     model: settings.model,
     input,
     stream: true,
-    reasoning: {enabled: false },
     text: {
       format: {
         type: "json_object"
@@ -97,30 +96,80 @@ function buildFallbackNote(answer) {
   return `${trigger} Store this as a personalization signal for future roasts.`;
 }
 
+function withTimeout(promise, timeoutMs) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error("Timed out"));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    clearTimeout(timeoutId);
+  });
+}
+
+function logLlmError(scope, error) {
+  console.error(`[Roastii LLM API Error] ${scope}`, error);
+}
+
 export async function analyzeAnswer(settings, question, answer) {
   try {
-    const response = await createStructuredResponse(
-      settings,
-      [
-        { role: "system", content: `${ONBOARDING_SYSTEM_PROMPT}\nReturn JSON only with a single key named llmNotesOnAnswer.` },
-        {
-          role: "user",
-          content: JSON.stringify({
-            questionTitle: question.title,
-            answer
-          })
-        }
-      ],
-      "analyzeAnswer"
+    const response = await withTimeout(
+      createStructuredResponse(
+        settings,
+        [
+          { role: "system", content: `${ONBOARDING_SYSTEM_PROMPT}\nReturn JSON only with a single key named llmNotesOnAnswer.` },
+          {
+            role: "user",
+            content: JSON.stringify({
+              questionTitle: question.title,
+              answer
+            })
+          }
+        ],
+        "analyzeAnswer"
+      ),
+      2500
     );
 
     return response.parsed;
   } catch (_error) {
-    console.log(_error);
+    logLlmError("analyzeAnswer", _error);
     return {
       llmNotesOnAnswer: buildFallbackNote(answer)
     };
   }
+}
+
+function fallbackOnboardingSummary(answers) {
+  const answerText = answers.map((entry) => entry.userAnswer).join(" ").toLowerCase();
+  const weakCategories = answers.find((entry) => entry.questionId === "weak_categories")?.userAnswer || "mystery treats";
+  const pausePrice = answers.find((entry) => entry.questionId === "pause_price")?.userAnswer || "a price tag you should probably respect";
+  const savingGoal = answers.find((entry) => entry.questionId === "saving_goal")?.userAnswer || "";
+
+  let headline = "Roastii finished the wallet autopsy.";
+  let walletWeakness = `Your soft spot looks like: ${weakCategories}.`;
+  let cooldownRule = `If it costs more than ${pausePrice}, wait 24 hours before buying.`;
+
+  if (/sale|deal|discount/.test(answerText)) {
+    headline = "Roastii sees you folding for fake urgency.";
+    cooldownRule = "If the pitch includes SALE energy, wait until tomorrow and check again.";
+  } else if (/stress|bored|impulse|guilt|return policy/.test(answerText)) {
+    headline = "Roastii clocked an emotional support checkout pattern.";
+    cooldownRule = "No buying when bored, stressed, or chasing a quick mood upgrade.";
+  }
+
+  if (savingGoal.toLowerCase().includes("yes")) {
+    walletWeakness = `${walletWeakness} You also keep trying to freestyle while saving for something bigger.`;
+  }
+
+  return {
+    headline,
+    roast: "Your answers say you are not reckless, but you are extremely talented at turning a tiny rationalization into a checkout event. Roastii will now be your professionally nosy pause button.",
+    walletWeakness,
+    cooldownRule
+  };
 }
 
 export async function generateOnboardingQuestion(_settings, conversationHistory) {
@@ -187,8 +236,36 @@ export async function generateRoast(settings, item, userProfile, purchaseHistory
 
     return response.parsed;
   } catch (_error) {
-    console.log(_error);
+    logLlmError("generateRoast", _error);
     return fallbackRoast(item.itemName, item.itemPrice, userProfile, purchaseHistory);
+  }
+}
+
+export async function generateOnboardingFinalRoast(settings, answers) {
+  try {
+    const response = await createStructuredResponse(
+      settings,
+      [
+        { role: "system", content: ONBOARDING_FINAL_ROAST_PROMPT },
+        {
+          role: "user",
+          content: JSON.stringify({
+            onboardingAnswers: answers
+          })
+        }
+      ],
+      "generateOnboardingFinalRoast"
+    );
+
+    return {
+      headline: response.parsed.headline || "Roastii finished the wallet autopsy.",
+      roast: response.parsed.roast || fallbackOnboardingSummary(answers).roast,
+      walletWeakness: response.parsed.walletWeakness || fallbackOnboardingSummary(answers).walletWeakness,
+      cooldownRule: response.parsed.cooldownRule || fallbackOnboardingSummary(answers).cooldownRule
+    };
+  } catch (_error) {
+    logLlmError("generateOnboardingFinalRoast", _error);
+    return fallbackOnboardingSummary(answers);
   }
 }
 

@@ -28,7 +28,7 @@ questionForm?.addEventListener("submit", async (event) => {
     return;
   }
 
-  internalNote.textContent = "Roastii is taking notes...";
+  internalNote.textContent = "Answer saved. Roastii is building your profile.";
   const response = await sendMessage("onboarding/answer", {
     question: currentQuestion,
     answer
@@ -40,11 +40,13 @@ questionForm?.addEventListener("submit", async (event) => {
   }
 
   const latestEntry = response.questions.at(-1);
-  internalNote.textContent = latestEntry?.llmNotesOnAnswer || "Pattern stored.";
+  internalNote.textContent = latestEntry?.llmNotesOnAnswer || "Pattern stored for future judgement.";
+  progressCount.textContent = `${response.questions.length}/${ONBOARDING_QUESTION_LIMIT}`;
   await loadNextQuestion();
 });
 
 async function loadNextQuestion() {
+  await updateProgressLabel();
   const response = await sendMessage("onboarding/next");
   if (!response.ok) {
     internalNote.textContent = `Roastii lost the script: ${response.error}`;
@@ -53,14 +55,29 @@ async function loadNextQuestion() {
 
   const result = response.result;
   if (result.done) {
+    currentQuestion = null;
+    internalNote.textContent = "Roastii is stitching together your final read...";
+    const summaryResponse = await sendMessage("onboarding/final-roast");
+    const summary = summaryResponse.ok ? summaryResponse.result : null;
     await sendMessage("onboarding/complete");
-    questionTitle.textContent = "That's enough data for tasteful judgement.";
+    questionTitle.textContent = summary?.headline || "That's enough data for tasteful judgement.";
     questionOptions.innerHTML = "";
     customAnswerWrap.classList.add("roastii-hidden");
     followUpWrap.classList.add("roastii-hidden");
     questionForm.innerHTML = `
-      <div class="roastii-panel">
-        <p class="roastii-copy">Roastii is ready. Open the extension popup on Amazon.ca and let the interventions begin.</p>
+      <div class="roastii-panel roastii-stack">
+        <p class="roastii-label">Final Roast</p>
+        <p class="roastii-copy">${summary?.roast || "Roastii is ready. Open the extension popup on Amazon.ca and let the interventions begin."}</p>
+      </div>
+      <div class="roastii-grid two">
+        <div class="roastii-panel roastii-stack">
+          <p class="roastii-label">Wallet Weakness</p>
+          <p class="roastii-copy">${summary?.walletWeakness || "Roastii now has enough context to spot your favorite rationalizations."}</p>
+        </div>
+        <div class="roastii-panel roastii-stack">
+          <p class="roastii-label">Cooldown Rule</p>
+          <p class="roastii-copy">${summary?.cooldownRule || "When a purchase starts sounding suspiciously justified, pause for 24 hours."}</p>
+        </div>
       </div>
       <div class="roastii-actions">
         <button class="roastii-button primary" type="button" id="finish-button">Open Settings</button>
@@ -70,6 +87,7 @@ async function loadNextQuestion() {
       chrome.runtime.openOptionsPage();
     });
     progressCount.textContent = `${ONBOARDING_QUESTION_LIMIT}/${ONBOARDING_QUESTION_LIMIT}`;
+    internalNote.textContent = "Profile complete. Roastii is ready for live interventions.";
     return;
   }
 
@@ -104,16 +122,13 @@ function renderQuestion(question) {
     });
   });
 
-  progressCount.textContent = `${Math.min(document.querySelectorAll(".roastii-choice input").length ? document.querySelectorAll(".roastii-choice input:checked").length : 0, ONBOARDING_QUESTION_LIMIT)}/${ONBOARDING_QUESTION_LIMIT}`;
-  updateProgressLabel();
 }
 
-function updateProgressLabel() {
-  sendMessage("storage/get").then((response) => {
-    if (response.ok) {
-      progressCount.textContent = `${response.data.questions.length}/${ONBOARDING_QUESTION_LIMIT}`;
-    }
-  });
+async function updateProgressLabel() {
+  const response = await sendMessage("storage/get");
+  if (response.ok) {
+    progressCount.textContent = `${response.data.questions.length}/${ONBOARDING_QUESTION_LIMIT}`;
+  }
 }
 
 function collectAnswer(question) {

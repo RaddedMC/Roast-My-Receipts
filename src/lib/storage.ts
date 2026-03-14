@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, DEFAULT_STATS, STORAGE_KEYS } from "./constants.ts";
+import { DEFAULT_SETTINGS, DEFAULT_STATS, ONBOARDING_QUESTIONS, STORAGE_KEYS } from "./constants.ts";
 
 const DEFAULT_STORE = {
   [STORAGE_KEYS.onboardingComplete]: false,
@@ -8,11 +8,32 @@ const DEFAULT_STORE = {
   [STORAGE_KEYS.stats]: DEFAULT_STATS
 };
 
+function normalizeQuestions(questions = []) {
+  const byId = new Map();
+  const orderById = new Map(
+    ONBOARDING_QUESTIONS.map((question, index) => [question.id, index])
+  );
+
+  for (const question of questions) {
+    if (!question?.questionId) {
+      continue;
+    }
+
+    byId.set(question.questionId, question);
+  }
+
+  return Array.from(byId.values()).sort(
+    (left, right) => (orderById.get(left.questionId) ?? Number.MAX_SAFE_INTEGER) - (orderById.get(right.questionId) ?? Number.MAX_SAFE_INTEGER)
+  );
+}
+
 export async function getData() {
   const result = await chrome.storage.local.get(DEFAULT_STORE);
+  const questions = normalizeQuestions(result[STORAGE_KEYS.questions] || []);
   return {
     ...DEFAULT_STORE,
     ...result,
+    [STORAGE_KEYS.questions]: questions,
     [STORAGE_KEYS.settings]: {
       ...DEFAULT_SETTINGS,
       ...(result[STORAGE_KEYS.settings] || {})
@@ -38,7 +59,10 @@ export async function updateSettings(partialSettings) {
 
 export async function addQuestionAnswer(question) {
   const data = await getData();
-  const questions = [...data[STORAGE_KEYS.questions], question];
+  const questions = normalizeQuestions([
+    ...data[STORAGE_KEYS.questions].filter((entry) => entry.questionId !== question.questionId),
+    question
+  ]);
   await chrome.storage.local.set({
     [STORAGE_KEYS.questions]: questions
   });
