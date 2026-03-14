@@ -63,6 +63,12 @@ function meterMarkup(score) {
   `;
 }
 
+function scoreColor(score) {
+  const safeScore = Math.max(0, Math.min(10, Number(score) || 0));
+  const hue = 120 - safeScore * 12;
+  return `hsl(${hue} 65% 42%)`;
+}
+
 function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose }) {
   const root = document.createElement("div");
   root.className = "roastii-modal-root";
@@ -80,13 +86,13 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
         <div class="roastii-panel roastii-stack">
           <div>
             <p class="roastii-label">Regret Score</p>
-            <strong>${roastData.regretScore}/10</strong>
+            <strong style="color: ${scoreColor(roastData.regretScore)};">${roastData.regretScore}/10</strong>
           </div>
           ${meterMarkup(roastData.regretScore)}
         </div>
         <div class="roastii-panel">
           <p class="roastii-label">Roast</p>
-          <p class="roastii-copy">${roastData.roast}</p>
+          <p class="roastii-copy" style="font-weight:700;">${roastData.roast}</p>
         </div>
         <div class="roastii-actions">
           <button class="roastii-button primary" data-action="add-anyway">Add Anyway</button>
