@@ -32,7 +32,7 @@ function parseAsin(url) {
 }
 
 function isAmazonProductPage(url = window.location.href) {
-  return /amazon\.ca\/.+(\/dp\/|\/gp\/product\/)/i.test(url);
+  return /^https?:\/\/(www\.)?amazon\.ca\//i.test(url);
 }
 
 function parseAmazonProduct(documentRoot = document) {
@@ -132,8 +132,11 @@ function bypassAddToCart(button) {
 
 function getAddToCartButton() {
   const button = document.querySelector("#add-to-cart-button");
-  return button instanceof HTMLButtonElement ? button : null;
+  return button instanceof HTMLInputElement || button instanceof HTMLButtonElement
+    ? button
+    : null;
 }
+
 
 function buildPurchaseRecord(product, roastData) {
   return {
@@ -179,7 +182,9 @@ function openRoastModal(product, roastData, handlers = {}) {
 }
 
 async function handleIntercept(event, button) {
+  console.log("[Roastii] Intercepting add to cart click", { bypass: button.dataset.roastiiBypass, interceptInProgress });
   if (button.dataset.roastiiBypass === "true" || interceptInProgress) {
+    console.log("[Roastii] Skipping — bypass flag or intercept already in progress");
     return;
   }
 
@@ -191,22 +196,28 @@ async function handleIntercept(event, button) {
   try {
     const product = parseAmazonProduct(document);
     if (!product.itemName || !product.itemPrice) {
+      console.log("[Roastii] Could not parse product details, bypassing interception", { product });
       bypassAddToCart(button);
       return;
     }
 
     const settings = await loadSettings();
+    console.log("[Roastii] Settings loaded:", settings);
     if (!settings?.enabled || !settings.autoRoastOnAddToCart) {
+      console.log("[Roastii] Auto roast on add to cart is disabled, bypassing interception", { enabled: settings?.enabled, autoRoastOnAddToCart: settings?.autoRoastOnAddToCart });
       bypassAddToCart(button);
       return;
     }
 
     const roastData = await requestRoast(product);
+    console.log("[Roastii] Roast data received:", roastData);
     if (!roastData) {
+      console.log("[Roastii] Failed to get roast data, bypassing interception");
       bypassAddToCart(button);
       return;
     }
 
+    console.log("[Roastii] Opening roast modal");
     openRoastModal(product, roastData, {
       onAddAnyway: async () => {
         try {
@@ -227,21 +238,30 @@ async function handleIntercept(event, button) {
       }
     });
   } catch (_error) {
+    console.error("[Roastii] Error during interception, bypassing add to cart", _error);
     bypassAddToCart(button);
   }
 }
 
 function attachInterception() {
   if (!isAmazonProductPage()) {
+    console.log("[Roastii] Not an Amazon product page, skipping interception");
     return;
   }
 
   const button = getAddToCartButton();
-  if (!button || button.dataset.roastiiBound === "true") {
+  if (!button) {
+    console.log("[Roastii] Add to Cart button not found");
+    return;
+  }
+  if (button.dataset.roastiiBound === "true") {
     return;
   }
 
+  console.log("[Roastii] Attaching interception to Add to Cart button", { button });
+
   button.dataset.roastiiBound = "true";
+
   button.addEventListener("click", (event) => {
     void handleIntercept(event, button);
   }, true);
