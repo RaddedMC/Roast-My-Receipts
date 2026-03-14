@@ -3,7 +3,7 @@ import { ONBOARDING_FINAL_ROAST_PROMPT, ONBOARDING_QUESTIONS, ONBOARDING_SYSTEM_
 
 function createClient(settings) {
   return new OpenAI({
-    apiKey: "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" || "not-needed",
+    apiKey: settings.apiKey || "not-needed",
     baseURL: settings.apiEndpoint?.trim() || undefined,
     dangerouslyAllowBrowser: true
   });
