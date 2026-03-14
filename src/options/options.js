@@ -1,5 +1,5 @@
-import { MODEL_OPTIONS } from "../lib/model-config.ts";
-import { sendMessage } from "../lib/runtime.ts";
+import { MODEL_OPTIONS } from "../lib/model-config.js";
+import { sendMessage } from "../lib/runtime.js";
 
 const form = document.querySelector("#settings-form");
 const endpointInput = document.querySelector("#api-endpoint");

@@ -2,12 +2,5 @@
   "name": "roast-my-receipts",
   "version": "0.1.0",
   "private": true,
-  "description": "Chrome extension that roasts Amazon.ca purchases before checkout.",
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "clean": "node scripts/build.mjs --clean"
-  },
-  "dependencies": {
-    "openai": "^6.29.0"
-  }
+  "description": "Chrome extension that roasts Amazon.ca purchases before checkout."
 }
