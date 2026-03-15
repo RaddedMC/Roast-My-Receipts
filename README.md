@@ -15,5 +15,5 @@ Past roasts will be saved, allowing for dynamic improvement of roasting as she m
 + Open your Extension Setting by opening <chrome://extensions/> or <edge://extensions/> based on your browser
 + Click on the Top Right Corner to enable `deverloper mode`
 + Click on `Load unpacked` to load the unziped folder
-+ Open the page that sets up the API, and then answer the following questions ![alt text](image.png) 
++ Open the page that sets up the API, and then answer the following questions
 + You are good to go! Think twice before you made any purchase!
