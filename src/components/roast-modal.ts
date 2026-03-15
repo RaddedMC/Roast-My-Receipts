@@ -1,12 +1,3 @@
-function meterMarkup(score) {
-  const offset = `${100 - Math.min(100, Math.max(0, score * 10))}%`;
-  return `
-    <div class="roastii-meter" aria-hidden="true">
-      <div class="roastii-meter-fill" style="left: ${100 - score * 10}%; width: ${offset};"></div>
-    </div>
-  `;
-}
-
 export function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose }) {
   const root = document.createElement("div");
   root.className = "roastii-modal-root";
@@ -26,7 +17,6 @@ export function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, 
             <p class="roastii-label">Regret Score</p>
             <strong>${roastData.regretScore}/10</strong>
           </div>
-          ${meterMarkup(roastData.regretScore)}
         </div>
         <div class="roastii-panel">
           <p class="roastii-label">Roast</p>

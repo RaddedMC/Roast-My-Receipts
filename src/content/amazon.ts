@@ -1,3 +1,9 @@
+const _ANGER_MOOD_CLASSES = ["roastii-mood-anger-1", "roastii-mood-anger-2", "roastii-mood-anger-3"];
+function getRandomAngerMoodClass() {
+  const index = Math.floor(Math.random() * _ANGER_MOOD_CLASSES.length);
+  return _ANGER_MOOD_CLASSES[index];
+}
+
 let interceptInProgress = false;
 
 function sendMessage(type, payload = {}) {
@@ -70,10 +76,12 @@ function scoreColor(score) {
 }
 
 function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose }) {
+  const moodImageClass = getRandomAngerMoodClass();
   const root = document.createElement("div");
   root.className = "roastii-modal-root";
   root.innerHTML = `
     <div class="roastii-modal-panel" role="dialog" aria-modal="true" aria-label="Roastii purchase warning">
+      <span class="roastii-mood-image roastii-mood-sprite roastii-mood-image-modal ${moodImageClass}" role="img" aria-label="Roastii looks upset"></span>
       <div class="roastii-stack">
         <div class="roastii-pill">Roastii here,</div>
         <div class="roastii-product">

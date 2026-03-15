@@ -1,4 +1,5 @@
 import { ONBOARDING_QUESTION_LIMIT } from "../lib/constants.ts";
+import { getRandomAngerMoodUrl } from "../lib/mood-helpers.ts";
 import { sendMessage } from "../lib/runtime.ts";
 
 const apiKeyGate = document.querySelector("#api-key-gate");
@@ -6,6 +7,7 @@ const onboardingApiKeyInput = document.querySelector("#onboarding-api-key");
 const validateApiKeyButton = document.querySelector("#validate-api-key");
 const openOptionsButton = document.querySelector("#open-options");
 const apiKeyStatus = document.querySelector("#api-key-status");
+const onboardingMoodImage = document.querySelector("#onboarding-mood-image");
 const progressCount = document.querySelector("#progress-count");
 const questionTitle = document.querySelector("#question-title");
 const questionOptions = document.querySelector("#question-options");
@@ -19,6 +21,10 @@ const internalNote = document.querySelector("#internal-note");
 
 let currentQuestion = null;
 let onboardingUnlocked = false;
+
+if (onboardingMoodImage instanceof HTMLImageElement) {
+  onboardingMoodImage.src = getRandomAngerMoodUrl();
+}
 
 void initializeOnboarding();
 

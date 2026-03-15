@@ -1,3 +1,4 @@
+import { getPopupMoodUrl } from "../lib/mood-helpers.ts";
 import { queryActiveTab, sendMessage } from "../lib/runtime.ts";
 
 const savedCount = document.querySelector("#saved-count");
@@ -9,6 +10,7 @@ const popupStatus = document.querySelector("#popup-status");
 const roastCurrentButton = document.querySelector("#roast-current");
 const streamState = document.querySelector("#stream-state");
 const streamPreview = document.querySelector("#stream-preview");
+const popupMoodImage = document.querySelector("#popup-mood-image");
 
 let activeStreamRequestId = "";
 let activeStreamBuffer = "";
@@ -117,14 +119,20 @@ async function hydrate() {
   }
 
   const { items, stats } = response.data;
-  const averageRegret = items.length
-    ? (items.reduce((sum, item) => sum + Number(item.regretScore || 0), 0) / items.length).toFixed(1)
-    : "0.0";
+  const rawAverageRegret = items.length
+    ? items.reduce((sum, item) => sum + Number(item.regretScore || 0), 0) / items.length
+    : 0;
+  const averageRegret = rawAverageRegret.toFixed(1);
+  const popupMoodScore = Number.parseFloat(averageRegret);
 
   savedCount.textContent = `${stats.savedCount || 0}`;
   moneySaved.textContent = `$${Number(stats.moneySaved || 0).toFixed(2)}`;
   avgRegret.textContent = `${averageRegret}/10`;
   roastedToday.textContent = `${stats.roastedToday || 0}`;
+
+  if (popupMoodImage instanceof HTMLImageElement) {
+    popupMoodImage.src = Number.isFinite(popupMoodScore) ? getPopupMoodUrl(popupMoodScore) : getPopupMoodUrl(0);
+  }
 
   recentRoasts.innerHTML = items.length
     ? items.slice(0, 5).map((item) => `

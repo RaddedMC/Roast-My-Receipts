@@ -43,7 +43,9 @@ body {
 }
 
 .roastii-header {
+  position: relative;
   padding: 24px;
+  padding-right: 118px;
   background:
     radial-gradient(circle at top left, rgba(255, 228, 173, 0.9), transparent 35%),
     linear-gradient(135deg, #ffe0a7 0%, #ffc785 100%);
@@ -237,12 +239,52 @@ body {
 }
 
 .roastii-modal-panel {
+  position: relative;
   width: min(100%, 420px);
   border-radius: 24px;
   background: var(--panel);
   box-shadow: var(--shadow);
   padding: 20px;
   animation: roastii-pop 180ms ease-out;
+}
+
+.roastii-mood-image {
+  display: block;
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.roastii-mood-sprite {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.roastii-mood-anger-1 {
+  background-image: url("../assets/svg/roastii-anger-1.png");
+}
+
+.roastii-mood-anger-2 {
+  background-image: url("../assets/svg/roastii-anger-2.svg");
+}
+
+.roastii-mood-anger-3 {
+  background-image: url("../assets/svg/roastii-anger-3.svg");
+}
+
+.roastii-mood-image-header {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+}
+
+.roastii-mood-image-modal {
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .roastii-product {
@@ -284,6 +326,15 @@ body {
   .roastii-header,
   .roastii-section {
     padding: 18px;
+  }
+
+  .roastii-header {
+    padding-right: 90px;
+  }
+
+  .roastii-mood-image {
+    width: 64px;
+    height: 64px;
   }
 
   .roastii-actions {

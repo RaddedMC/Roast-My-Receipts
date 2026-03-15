@@ -1,3 +1,4 @@
+import { getMehMoodUrl } from "../lib/mood-helpers.ts";
 import { MODEL_OPTIONS } from "../lib/model-config.ts";
 import { sendMessage } from "../lib/runtime.ts";
 
@@ -9,6 +10,7 @@ const enabledInput = document.querySelector("#enabled");
 const autoRoastInput = document.querySelector("#auto-roast");
 const saveStatus = document.querySelector("#save-status");
 const connectionStatus = document.querySelector("#connection-status");
+const optionsMoodImage = document.querySelector("#options-mood-image");
 
 modelSelect.innerHTML = MODEL_OPTIONS.map((option) => `<option value="${option.id}">${option.label}</option>`).join("");
 
@@ -60,6 +62,10 @@ document.querySelector("#redo-onboarding")?.addEventListener("click", async () =
 });
 
 async function hydrate() {
+  if (optionsMoodImage instanceof HTMLImageElement) {
+    optionsMoodImage.src = getMehMoodUrl();
+  }
+
   const response = await sendMessage("storage/get");
   if (!response.ok) {
     saveStatus.textContent = `Unable to load settings: ${response.error}`;
