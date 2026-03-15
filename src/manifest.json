@@ -26,5 +26,11 @@
       "run_at": "document_idle"
     }
   ],
+  "web_accessible_resources": [  
+  {  
+    "resources": ["assets/svg/roastii-anger-1.png", "assets/svg/roastii-anger-2.svg", "assets/svg/roastii-anger-3.svg", "assets/svg/roastii-excite.svg", "assets/svg/roastii-meh.svg", "assets/svg/roastii-think.svg"],
+    "matches": ["<all_urls>"]
+  }  
+  ],  
   "options_page": "options/options.html"
 }

@@ -1,5 +1,5 @@
 import { ONBOARDING_QUESTION_LIMIT } from "../lib/constants.ts";
-import { getRandomAngerMoodUrl } from "../lib/mood-helpers.ts";
+import { getExciteMoodUrl, getRandomAngerMoodUrl } from "../lib/mood-helpers.ts";
 import { sendMessage } from "../lib/runtime.ts";
 
 const apiKeyGate = document.querySelector("#api-key-gate");
@@ -23,7 +23,7 @@ let currentQuestion = null;
 let onboardingUnlocked = false;
 
 if (onboardingMoodImage instanceof HTMLImageElement) {
-  onboardingMoodImage.src = getRandomAngerMoodUrl();
+  onboardingMoodImage.src = getExciteMoodUrl();
 }
 
 void initializeOnboarding();
