@@ -10,15 +10,11 @@
     <main class="roastii-shell">
       <section class="roastii-card">
         <header class="roastii-header">
-          <div class="roastii-pill">Onboarding</div>
-          <h1 class="roastii-title">Roastii wants your shopping lore</h1>
-          <p class="roastii-subtitle">Eight questions. Zero judgement spirals. Maximum useful side-eye.</p>
+          <div class="roastii-pill">Hi, I'm Roastii!</div>
+          <h1 class="roastii-title">Tell me your shopping lore.</h1>
+          <p class="roastii-subtitle">I'm going to ask you 8 questions. Please answer them honestly so I can build the best profile for you!</p>
         </header>
         <div class="roastii-section roastii-stack">
-          <div class="roastii-panel roastii-stack">
-            <p class="roastii-label">Roastii Says</p>
-            <p class="roastii-copy" id="intro-copy">I am your plush demon accountant. Let's figure out where your wallet keeps getting ambushed.</p>
-          </div>
           <div class="roastii-panel roastii-stack">
             <div class="roastii-grid two">
               <div class="roastii-stat">
@@ -26,24 +22,25 @@
                 <strong id="progress-count">0/8</strong>
               </div>
               <div class="roastii-stat">
-                <span class="roastii-label">Internal Vibe Check</span>
+                <span class="roastii-label">My thoughts:</span>
                 <p class="roastii-inline-note" id="internal-note">Roastii is listening for patterns.</p>
               </div>
             </div>
             <div id="api-key-gate" class="roastii-stack">
               <div class="roastii-panel roastii-stack">
                 <p class="roastii-label">Step 1: Connect Your API Key</p>
-                <p class="roastii-copy">Roastii needs your API key before she can run onboarding and personalize your interventions.</p>
-                <p class="roastii-copy">By default, we use Groq as they provide free access. You can get your key at <a href="https://console.groq.com/keys">console.groq.com/keys</a>.</p>
+                <p class="roastii-copy">I need your API key before I can run onboarding and personalize my interventions.</p>
+                <p class="roastii-copy">By default, I use Groq as they provide free access. You can get your key at <a href="https://console.groq.com/keys">console.groq.com/keys</a>.</p>
                 <p class="roastii-copy">Or, you can use a different LLM host by going to Settings.</p>
+                <p class="roastii-copy">You can use this API key during the hackathon: <b>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</b></p>
               </div>
               <label class="roastii-stack">
                 <span class="roastii-label">API Key</span>
                 <input class="roastii-input" id="onboarding-api-key" type="password" autocomplete="off" placeholder="Paste your API key">
               </label>
-              <p class="roastii-inline-note" id="api-key-status">Enter your API key, then validate to start onboarding.</p>
+              <p class="roastii-inline-note" id="api-key-status">Enter your API key, then validate to get started.</p>
               <div class="roastii-actions">
-                <button class="roastii-button primary" type="button" id="validate-api-key">Validate & Start Onboarding</button>
+                <button class="roastii-button primary" type="button" id="validate-api-key">Validate & Start!</button>
                 <button class="roastii-button" type="button" id="open-options">Open Settings</button>
               </div>
             </div>
@@ -55,14 +52,14 @@
               <div class="roastii-choices" id="question-options"></div>
               <label class="roastii-stack roastii-hidden" id="custom-answer-wrap">
                 <span class="roastii-label">Custom Answer</span>
-                <textarea class="roastii-textarea" id="custom-answer" placeholder="Tell Roastii the truth."></textarea>
+                <textarea class="roastii-textarea" id="custom-answer" placeholder="Tell me the truth."></textarea>
               </label>
               <label class="roastii-stack roastii-hidden" id="follow-up-wrap">
                 <span class="roastii-label" id="follow-up-label">Follow-up</span>
                 <input class="roastii-input" id="follow-up-input" type="text">
               </label>
               <div class="roastii-actions">
-                <button class="roastii-button primary" type="submit">Lock In Answer</button>
+                <button class="roastii-button primary" type="submit">Next</button>
               </div>
             </form>
           </div>

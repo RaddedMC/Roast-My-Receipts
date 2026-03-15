@@ -88,6 +88,7 @@ async function createStructuredResponse(settings, messages, schemaName, options 
   };
 }
 
+// TODO: I don't believe any of the triggers are used... Do we need fallbacks?
 function buildFallbackNote(answer) {
   const lowered = answer.toLowerCase();
   const trigger = /(sale|deal|discount|impulse|bored|stress|late night)/.test(lowered)
@@ -142,6 +143,7 @@ export async function analyzeAnswer(settings, question, answer) {
   }
 }
 
+// TODO: I don't believe any of the triggers are used... Do we need fallbacks?
 function fallbackOnboardingSummary(answers) {
   const answerText = answers.map((entry) => entry.userAnswer).join(" ").toLowerCase();
   const weakCategories = answers.find((entry) => entry.questionId === "weak_categories")?.userAnswer || "mystery treats";
@@ -199,7 +201,7 @@ function fallbackRoast(itemName, itemPrice, questions, items) {
   }
 
   regretScore = Math.max(0, Math.min(10, regretScore));
-
+// TODO: I don't believe any of the triggers are used... Do we need fallbacks?
   const roast = repeatPurchase
     ? `Roastii spotted a sequel purchase. "${itemName}" is giving same-problem-new-box energy, and ${itemPrice.toFixed(2)} CAD is a spicy price for a rerun.`
     : `${itemName} just strutted in asking for ${itemPrice.toFixed(2)} CAD like your budget won't notice. Roastii recommends a 24-hour cooldown before this becomes tomorrow's character development.`;

@@ -26,13 +26,13 @@ export const ONBOARDING_QUESTION_LIMIT = 8;
 export const ONBOARDING_QUESTIONS = [
   {
     id: "fun_money",
-    title: "Let's talk money. After rent, bills, and keeping yourself alive — how much 'fun' money (CAD) are we working with each month?",
+    title: "After rent, bills, and keeping yourself alive — how much 'fun' money (CAD) are you working with each month?",
     type: "single",
     options: [
-      "Under $400 — every dollar has a job",
-      "$400–$1,000 — comfortable but not careless",
-      "$1,000–$2,500 — I can treat myself sometimes",
-      "$2,500+ — I am Sam Altman and I don't GAF!",
+      "Under $300 — every dollar has a job",
+      "$300–$800 — comfortable but not careless",
+      "$800–$1,500 — I can treat myself sometimes",
+      "$1,500+ — I am Sam Altman and I don't GAF!",
       "Type your own answer here"
     ]
   },
@@ -49,7 +49,7 @@ export const ONBOARDING_QUESTIONS = [
     ],
     followUp: {
       match: "Yes — something big (house, car, tuition, trip)",
-      label: "Nice. What's the goal?"
+      label: "What's the goal?"
     }
   },
   {
@@ -57,38 +57,38 @@ export const ONBOARDING_QUESTIONS = [
     title: "If your bank sent you a monthly 'non-essential spending' report, what number would make you feel okay vs. ashamed?",
     type: "single",
     options: [
-      "Under $50 — I want to be a monk about this",
-      "$50–$150 — reasonable treats only",
-      "$150–$300 — I work hard, I deserve things",
-      "$300+ — just roast me and let me cope",
+      "Under $100 — I want to be very strict about this",
+      "$100–$300 — reasonable treats only",
+      "$300–$800 — I work hard, I deserve things",
+      "$800+ — just roast me and let me cope",
       "Type your own answer here"
     ]
   },
   {
     id: "pause_price",
-    title: "What price tag makes you pause before clicking 'Buy Now'?",
+    title: "What price tag makes you nervous, or stop and think, before clicking 'Buy Now'?",
     type: "single",
     options: [
-      "$15 — I agonize over everything",
-      "$30 — small stuff is fine, but I think twice past this",
-      "$75 — this is where it starts to feel real",
-      "$150+ — anything under that is basically free to me",
+      "$30 — I agonize over everything",
+      "$60 — small stuff is fine, but I think twice past this",
+      "$100 — this is where it starts to feel real",
+      "$200+ — anything under that is basically free to me",
       "Type your own answer here"
     ]
   },
   {
     id: "weak_categories",
-    title: "Time for some self-awareness therapy. Which of these make your wallet cry? Pick all that apply.",
+    title: "Which of these categories are you most likely to impulse-buy? Select all that apply.",
     type: "multi",
     options: [
-      "🔌 Tech & gadgets — but it has a feature my current one doesn't",
-      "👗 Fashion & beauty — it's not shopping, it's self-expression",
-      "🏠 Home & kitchen — this $40 avocado slicer will change everything",
-      "🍿 Snacks & groceries — I'm just stocking up (you're not)",
-      "📚 Books, courses & subscriptions — it's an investment in myself",
-      "🏋️ Fitness & outdoors — this is the year I become that person",
-      "🎮 Games & entertainment — I deserve to relax",
-      "🎁 Gifts & stuff for others — it's not for me so it doesn't count",
+      "🔌 Tech & gadgets — 'But it has a feature my current one doesn't!!'",
+      "👗 Fashion & beauty — 'It's not shopping, it's self-expression.'",
+      "🏠 Home & kitchen — 'This $40 avocado slicer will change everything!'",
+      "🍿 Snacks & groceries — 'I'm just stocking up' (you're not)",
+      "📚 Books, courses & subscriptions — 'it's an investment in myself'",
+      "🏋️ Fitness & outdoors — 'I'm finally going to become that person!'",
+      "🎮 Games & entertainment — 'I deserve to relax.'",
+      "🎁 Gifts & stuff for others — 'If it's not for me it doesn't count!'",
       "Type your own answer(s) here"
     ]
   },
@@ -97,10 +97,10 @@ export const ONBOARDING_QUESTIONS = [
     title: "You just impulse-bought something. It's been 10 minutes. How are we feeling?",
     type: "single",
     options: [
-      "Amazing. No regrets. Born to shop.",
+      "Amazing. No regrets. Born to shop!",
       "A brief high followed by a slow creeping guilt",
-      "Already checking the return policy",
-      "I've closed the confirmation email so I don't have to look at it",
+      "A little nervous -- Already checking the return policy",
+      "I'm too scared so I've closed the confirmation email so I don't have to look at it",
       "Type your own answer here"
     ]
   },
@@ -110,15 +110,15 @@ export const ONBOARDING_QUESTIONS = [
     type: "single",
     options: [
       "Never used it — it's a $120 shelf decoration now",
-      "Found it cheaper literally the next day",
-      "It was garbage quality — betrayed by a 4.5-star rating",
+      "Found a cheaper or better value one literally the next day",
+      "It was garbage quality — betrayed by the 4.5-star rating",
       "Nothing was wrong with it. I just didn't need it and I knew that when I bought it.",
       "Type your own answer here"
     ]
   },
   {
     id: "self_description",
-    title: "Last one. Describe yourself in 1-2 sentences so Roastii knows who she's dealing with. Be honest — she will find out.",
+    title: "Last one. Describe yourself in 1-2 sentences I Roastii knows who I'm dealing with. Be honest — I will find out!",
     type: "single",
     options: [
       "Type your own answer here"

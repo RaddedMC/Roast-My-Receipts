@@ -38,18 +38,18 @@ questionForm?.addEventListener("submit", async (event) => {
 
   const answer = collectAnswer(currentQuestion);
   if (!answer) {
-    internalNote.textContent = "Roastii needs an answer before she can sharpen the next one.";
+    internalNote.textContent = "I need an answer to continue!";
     return;
   }
 
-  internalNote.textContent = "Answer saved. Roastii is building your profile.";
+  internalNote.textContent = "Answer saved. Building your profile...";
   const response = await sendMessage("onboarding/answer", {
     question: currentQuestion,
     answer
   });
 
   if (!response.ok) {
-    internalNote.textContent = `That answer bounced: ${response.error}`;
+    internalNote.textContent = `oof. Error!: ${response.error}`;
     return;
   }
 
@@ -67,7 +67,7 @@ async function initializeOnboarding() {
   const response = await sendMessage("storage/get");
   if (!response.ok) {
     apiKeyStatus.textContent = `Unable to load settings: ${response.error}`;
-    internalNote.textContent = "Roastii cannot start onboarding until settings load.";
+    internalNote.textContent = "I cannot start until settings load!";
     return;
   }
 
@@ -77,8 +77,8 @@ async function initializeOnboarding() {
   }
 
   if (!existingApiKey) {
-    apiKeyStatus.textContent = "Enter your API key, then validate to start onboarding.";
-    internalNote.textContent = "Roastii needs your API key before she starts profiling your spending patterns.";
+    apiKeyStatus.textContent = "Enter your API key, then validate to start.";
+    internalNote.textContent = "I need your API key before I can start profiling your spending patterns!";
     return;
   }
 
@@ -90,12 +90,12 @@ async function initializeOnboarding() {
 
   if (!testResponse.ok) {
     apiKeyStatus.textContent = `Saved key failed validation: ${testResponse.error}`;
-    internalNote.textContent = "Update the key and validate again to begin onboarding.";
+    internalNote.textContent = "Update the key and validate again to begin.";
     setGateBusy(false);
     return;
   }
 
-  apiKeyStatus.textContent = "Saved key validated. Starting onboarding...";
+  apiKeyStatus.textContent = "Saved key validated. Let me get ready...";
   await unlockOnboarding();
   setGateBusy(false);
 }
@@ -103,8 +103,8 @@ async function initializeOnboarding() {
 async function validateAndStartOnboarding() {
   const apiKey = onboardingApiKeyInput?.value.trim() || "";
   if (!apiKey) {
-    apiKeyStatus.textContent = "API key is required before onboarding can start.";
-    internalNote.textContent = "Paste your API key to unlock the onboarding flow.";
+    apiKeyStatus.textContent = "An API key is required before we can start.";
+    internalNote.textContent = "Paste your API key to continue setup.";
     return;
   }
 
@@ -116,7 +116,7 @@ async function validateAndStartOnboarding() {
 
   if (!saveResponse.ok) {
     apiKeyStatus.textContent = `Could not save API key: ${saveResponse.error}`;
-    internalNote.textContent = "Roastii could not store your key. Try again or open settings.";
+    internalNote.textContent = "I couldn't store your key. Try again or open settings.";
     setGateBusy(false);
     return;
   }
@@ -133,7 +133,7 @@ async function validateAndStartOnboarding() {
     return;
   }
 
-  apiKeyStatus.textContent = "Connection succeeded. Unlocking onboarding...";
+  apiKeyStatus.textContent = "Connection succeeded. Continuing setup...";
   await unlockOnboarding();
   setGateBusy(false);
 }
@@ -158,7 +158,7 @@ async function unlockOnboarding() {
   onboardingUnlocked = true;
   apiKeyGate?.classList.add("roastii-hidden");
   questionForm?.classList.remove("roastii-hidden");
-  internalNote.textContent = "API key verified. Roastii can now build your profile.";
+  internalNote.textContent = "API key verified. I can now build your profile!";
   await loadNextQuestion();
 }
 
@@ -177,7 +177,7 @@ async function loadNextQuestion() {
   const result = response.result;
   if (result.done) {
     currentQuestion = null;
-    internalNote.textContent = "Roastii is stitching together your final read...";
+    internalNote.textContent = "I'm just checking everything over...";
     const summaryResponse = await sendMessage("onboarding/final-roast");
     const summary = summaryResponse.ok ? summaryResponse.result : null;
     await sendMessage("onboarding/complete");
@@ -188,15 +188,15 @@ async function loadNextQuestion() {
     questionForm.innerHTML = `
       <div class="roastii-panel roastii-stack">
         <p class="roastii-label">Final Roast</p>
-        <p class="roastii-copy">${summary?.roast || "Roastii is ready. Open the extension popup on Amazon.ca and let the interventions begin."}</p>
+        <p class="roastii-copy">${summary?.roast || "Okay great! Everything's ready. I'll pop up to intervene if you start making bad purchasing decisions on Amazon.ca"}</p>
       </div>
       <div class="roastii-grid two">
         <div class="roastii-panel roastii-stack">
-          <p class="roastii-label">Wallet Weakness</p>
-          <p class="roastii-copy">${summary?.walletWeakness || "Roastii now has enough context to spot your favorite rationalizations."}</p>
+          <p class="roastii-label">Your impulsive weaknesses:</p>
+          <p class="roastii-copy">${summary?.walletWeakness || "I now has enough context to spot your favorite rationalizations."}</p>
         </div>
         <div class="roastii-panel roastii-stack">
-          <p class="roastii-label">Cooldown Rule</p>
+          <p class="roastii-label">Your recommended cool-down rule:</p>
           <p class="roastii-copy">${summary?.cooldownRule || "When a purchase starts sounding suspiciously justified, pause for 24 hours."}</p>
         </div>
       </div>
@@ -208,7 +208,7 @@ async function loadNextQuestion() {
       chrome.runtime.openOptionsPage();
     });
     progressCount.textContent = `${ONBOARDING_QUESTION_LIMIT}/${ONBOARDING_QUESTION_LIMIT}`;
-    internalNote.textContent = "Profile complete. Roastii is ready for live interventions.";
+    internalNote.textContent = "Profile complete. I'm ready for interventions.";
     return;
   }
 

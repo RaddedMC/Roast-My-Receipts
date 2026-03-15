@@ -27,9 +27,9 @@ chrome.runtime.onMessage.addListener((message) => {
   activeStreamBuffer += message.chunk || "";
   const preview = extractRoastPreview(activeStreamBuffer);
   setStreamingState({
-    status: "Streaming roast...",
-    stateLabel: preview ? "Streaming live..." : "Roastii is thinking...",
-    preview: preview || activeStreamBuffer.trim() || "Waiting for the first tokens..."
+    status: "Creating your roast...",
+    stateLabel: preview ? "Creating roast..." : "Roastii is thinking...",
+    preview: preview || activeStreamBuffer.trim() || "Still thinking..."
   });
   return false;
 });
@@ -41,14 +41,14 @@ roastCurrentButton?.addEventListener("click", async () => {
   setStreamingState({
     status: "Looking at the current tab...",
     stateLabel: "Checking the page...",
-    preview: "Roastii is looking for the product details first."
+    preview: "I'm looking for the product details."
   });
 
   try {
     const [tab] = await queryActiveTab();
     if (!tab?.id || !tab.url?.includes("amazon.ca")) {
       setStreamingState({
-        status: "Open an Amazon.ca product page first.",
+        status: "Open an Amazon.ca product page!",
         stateLabel: "No supported page",
         preview: "Open a product page on Amazon.ca, then try again."
       });
@@ -62,9 +62,9 @@ roastCurrentButton?.addEventListener("click", async () => {
 
     if (!pageResponse?.ok || !product?.itemName) {
       setStreamingState({
-        status: "Roastii couldn't find product details on this page.",
+        status: "I couldn't find product details on this page.",
         stateLabel: "Product not found",
-        preview: "This page did not expose enough product info for a roast."
+        preview: "I can't roast this page. It's not a product!"
       });
       return;
     }
@@ -100,7 +100,7 @@ roastCurrentButton?.addEventListener("click", async () => {
     setStreamingState({
       status: `Roast failed: ${error.message || "Unknown error"}`,
       stateLabel: "Streaming failed",
-      preview: "Roastii hit a snag talking to the model. Check the endpoint, model, and key in Settings."
+      preview: "My brain stopped working. Check the endpoint, model, and key in Settings."
     });
   } finally {
     activeStreamRequestId = "";
@@ -112,7 +112,7 @@ roastCurrentButton?.addEventListener("click", async () => {
 async function hydrate() {
   const response = await sendMessage("storage/get");
   if (!response.ok) {
-    popupStatus.textContent = `Unable to load Roastii data: ${response.error}`;
+    popupStatus.textContent = `Unable to load data: ${response.error}`;
     return;
   }
 
@@ -141,7 +141,7 @@ async function hydrate() {
   }
 
   if (streamPreview && !activeStreamRequestId) {
-    streamPreview.textContent = "Start a roast to watch Roastii stream the takedown live.";
+    streamPreview.textContent = "Start a roast!";
   }
 }
 

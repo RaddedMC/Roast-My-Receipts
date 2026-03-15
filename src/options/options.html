@@ -10,15 +10,16 @@
     <main class="roastii-shell">
       <section class="roastii-card">
         <header class="roastii-header">
-          <div class="roastii-pill">Settings Lair</div>
-          <h1 class="roastii-title">Teach Roastii how to judge your cart</h1>
-          <p class="roastii-subtitle">Configure the Groq OpenAI-compatible endpoint, model, and the level of intervention.</p>
+          <div class="roastii-pill">Teach me how to judge your shopping.</div>
+          <h1 class="roastii-title">Settings</h1>
+          <p class="roastii-subtitle">Configure my AI endpoint, model, and how harshly I judge you.</p>
+          <p class="roastii-label">I'm compatible with any API that follows the OpenAI API format.</p>
         </header>
         <div class="roastii-section roastii-stack">
           <form id="settings-form" class="roastii-form">
             <div class="roastii-grid two">
               <label class="roastii-stack">
-                <span class="roastii-label">API Endpoint</span>
+                <span class="roastii-label">AI endpoint</span>
                 <input class="roastii-input" id="api-endpoint" name="apiEndpoint" type="url">
               </label>
               <label class="roastii-stack">
@@ -28,12 +29,12 @@
             </div>
             <label class="roastii-stack">
               <span class="roastii-label">API Key</span>
-              <input class="roastii-input" id="api-key" name="apiKey" type="password" placeholder="Enter your Groq API key">
+              <input class="roastii-input" id="api-key" name="apiKey" type="password" placeholder="Enter your API key">
             </label>
             <div class="roastii-grid two">
               <label class="roastii-choice">
                 <input id="enabled" name="enabled" type="checkbox">
-                <span>Enable Roastii across Amazon.ca</span>
+                <span>Enable Amazon.ca integration</span>
               </label>
               <label class="roastii-choice">
                 <input id="auto-roast" name="autoRoastOnAddToCart" type="checkbox">
@@ -49,7 +50,7 @@
             </div>
             <div class="roastii-actions">
               <button class="roastii-button primary" type="submit">Save Settings</button>
-              <button class="roastii-button ghost" id="redo-onboarding" type="button">Redo Onboarding</button>
+              <button class="roastii-button ghost" id="redo-onboarding" type="button">Redo Setup</button>
               <button class="roastii-button ghost" id="clear-data" type="button">Clear All Data</button>
             </div>
             <p class="roastii-inline-note" id="save-status"></p>

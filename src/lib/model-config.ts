@@ -7,7 +7,7 @@ export const MODEL_OPTIONS = [
   {
     id: "llama-3.3-70b-versatile",
     label: "llama-3.3-70b-versatile",
-    description: "Stronger reasoning and writing quality, with a bit more latency."
+    description: "Stronger reasoning and writing quality, with a bit more lag."
   },
   {
     id: "openai/gpt-oss-20b",

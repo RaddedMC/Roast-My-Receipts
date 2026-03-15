@@ -36,12 +36,12 @@ document.querySelector("#test-connection")?.addEventListener("click", async () =
   connectionStatus.textContent = "Testing...";
   const response = await sendMessage("settings/test", collectSettings());
   connectionStatus.textContent = response.ok
-    ? "Connection succeeded. Roastii can reach the configured endpoint."
+    ? "Connection succeeded. I can reach the configured endpoint!"
     : `Connection failed: ${response.error}`;
 });
 
 document.querySelector("#clear-data")?.addEventListener("click", async () => {
-  const confirmed = window.confirm("Clear Roastii's stored profile, history, and stats?");
+  const confirmed = window.confirm("Clear my stored profile, history, and stats?");
   if (!confirmed) {
     return;
   }

@@ -75,7 +75,7 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
   root.innerHTML = `
     <div class="roastii-modal-panel" role="dialog" aria-modal="true" aria-label="Roastii purchase warning">
       <div class="roastii-stack">
-        <div class="roastii-pill">Roastii incoming</div>
+        <div class="roastii-pill">Roastii here,</div>
         <div class="roastii-product">
           <img src="${product.imageUrl || ""}" alt="">
           <div class="roastii-stack">
@@ -95,9 +95,12 @@ function showRoastModal({ roastData, product, onAddAnyway, onSaveWallet, onClose
           <p class="roastii-copy" style="font-weight:700;">${roastData.roast}</p>
         </div>
         <div class="roastii-actions">
-          <button class="roastii-button primary" data-action="add-anyway">Add Anyway</button>
-          <button class="roastii-button secondary" data-action="save-wallet">Save My Wallet</button>
-          <button class="roastii-button ghost" data-action="close">Let Me Think...</button>
+          <button class="roastii-button primary" data-action="add-anyway">&#x1F911;
+ Add anyway!</button>
+          <button class="roastii-button secondary" data-action="save-wallet">&#x1F914;
+ Changed my mind</button>
+          <button class="roastii-button ghost" data-action="close">&#x1F628;
+ Forget this ever happened...</button>
         </div>
       </div>
     </div>
