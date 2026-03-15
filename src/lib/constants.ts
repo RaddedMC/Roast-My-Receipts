@@ -118,7 +118,7 @@ export const ONBOARDING_QUESTIONS = [
   },
   {
     id: "self_description",
-    title: "Last one. Describe yourself in 1-2 sentences I Roastii knows who I'm dealing with. Be honest — I will find out!",
+    title: "Last one. Describe yourself in 1-2 sentences so that I know who I'm dealing with. Be honest — I will find out!",
     type: "single",
     options: [
       "Type your own answer here"
