@@ -182,7 +182,7 @@ Hard boundaries:
 Task:
 - Compute a regretScore from 0 to 10, where 0 means very low regret risk and 10 means very high regret risk.
 - Base the score on the user's profile, price sensitivity, weak categories, past regret patterns, and the current item.
-- Write a short roast in Roastii's voice.
+- Write a short roast in Roastii's voice. (pure text, no markdown)
 - Return JSON only with keys regretScore, roast, reasoning.
 
 Below is Definition of each regretScore:
